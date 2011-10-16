@@ -353,13 +353,13 @@ def daughters(fn = identity):
     return SearchFunction(_daughters)
 
 def hasXSister(fn = identity, sisterFn = allSisters):
-    def _hasSister(t):
+    def _hasXSister(t):
         vals = [fn(s) for s in sisterFn(t)]
         if reduce(functionalOr, vals):
             return t
         else:
             return None
-    return SearchFunction(_hasSister)
+    return SearchFunction(_hasXSister)
 
 def hasSister(fn = identity):
     return hasXSister(fn, allSisters)
