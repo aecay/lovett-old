@@ -242,7 +242,7 @@ def immLeftSister(t):
         t = t.left_sibling
         if not shouldIgnore(t):
             res = t
-    return res
+    return [res]
 
 def immRightSister(t):
     res = None
@@ -250,7 +250,7 @@ def immRightSister(t):
         t = t.right_sibling
         if not shouldIgnore(t):
             res = t
-    return res
+    return [res]
 
 def allDaughters(t):
     return [d for d in t if not shouldIgnore(d)]
