@@ -236,7 +236,7 @@ def allRightSisters(t):
 def allSisters(t):
     return allLeftSisters(t).extend(allRightSisters(t))
 
-def immLeftSister(t):
+def nextLeftSister(t):
     res = None
     while not res and t:
         t = t.left_sibling
@@ -244,7 +244,7 @@ def immLeftSister(t):
             res = t
     return [res]
 
-def immRightSister(t):
+def nextRightSister(t):
     res = None
     while not res and t:
         t = t.right_sibling
@@ -368,9 +368,9 @@ def hasLeftSister(fn = identity):
 def hasRightSister(fn = identity):
     return hasXSister(fn, allRightSisters)
 def hasImmRightSister(fn = identity):
-    return hasXSister(fn, immRightSister)
+    return hasXSister(fn, nextRightSister)
 def hasImmLeftSister(fn = identity):
-    return hasXSister(fn, immLeftSister)
+    return hasXSister(fn, nextLeftSister)
 
 def sistersX(fn = identity, sisterFn = allSisters):
     def _sisters(t):
@@ -385,9 +385,9 @@ def leftSisters(fn = identity):
 def rightSisters(fn = identity):
     return sistersX(fn, rightSisters)
 def immLeftSister(fn = identity):
-    return sistersX(fn, immLeftSister)
+    return sistersX(fn, nextLeftSister)
 def immRightSister(fn = identity):
-    return sistersX(fn, immRightSister)
+    return sistersX(fn, nextRightSister)
 
 # TODO: how to handle ignoring parent?
 def hasParent(fn = identity):
