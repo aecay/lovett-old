@@ -63,7 +63,6 @@ class TreeTransformer:
             acc = []
             p = m
             while not done:
-                print p
                 p = p.right_sibling
                 if p:
                     acc.append(p)
