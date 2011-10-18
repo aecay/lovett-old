@@ -11,6 +11,7 @@ class TreeTransformer:
         # temp = TreeTransformer(self._tree, [p])
         return fn(self._tree[p])
 
+    # TODO: add shortcut to call with just a string -> hasLabel
     def findNodes(self, fn = lambda x: True):
         self._matches = []
         for p in self._tree.treepositions():
