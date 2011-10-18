@@ -218,7 +218,13 @@ def test():
     tmp.findNodes(hasLemma("el"))
     print "haslemma el"
     print tmp.matches()
+    tmp.findNodes(hasLabel("N") & hasParent(hasLabel("NP")))
+    print "n hasparent np"
+    print tmp.matches()
     tmp.findNodes(hasLabel("M")).prune()
     print "prune m"
+    print tmp.pt()
+    tmp.findNodes(hasLabel("NP")).prune()
+    print "prune np"
     print tmp.pt()
     
