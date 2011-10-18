@@ -115,11 +115,10 @@ class TreeTransformer:
                     done = True
         return self
 
-    def changeLabel(self, label = "", fn = None):
-        # TODO: Raise an error if neither label or fn given
-        if fn:
+    def changeLabel(self, label = "XXX"):
+        if hasattr(label, "__call__"):
             for m in self._matches:
-                m.node = fn(m.node)
+                m.node = label(m.node)
         else:
             for m in self._matches:
                 m.node = label
