@@ -143,6 +143,8 @@ class TreeTransformer:
                 p.insert(pi, d)
             del self._tree[m.treepos]
 
+    # TODO: raiseNode
+
     def matches(self):
         return self._matches
 
