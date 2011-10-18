@@ -74,7 +74,7 @@ def allLeftSisters(t):
     res = []
     while t:
         t = t.left_sibling
-        if not shouldIgnore(t):
+        if t and not shouldIgnore(t):
             res.append(t)
     return res
 
@@ -82,8 +82,8 @@ def allRightSisters(t):
     res = []
     while t:
         t = t.right_sibling
-        if not shouldIgnore(t):
-            res.append(t.right_sibling)
+        if t and not shouldIgnore(t):
+            res.append(t)
     return res
 
 def allSisters(t):
