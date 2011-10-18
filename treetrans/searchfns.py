@@ -20,6 +20,7 @@ class SearchFunction:
         else:
             return arg
 
+    # TODO: scoping rules for and and or...
     def __and__(self, other):
         def _and(t):
             res = self(t)
