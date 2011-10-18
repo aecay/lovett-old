@@ -250,6 +250,15 @@ def immRightSister(fn = identity):
 def hasParent(fn = identity):
     def _hasParent(t):
         p = t.parent
+        if fn(p):
+            return t
+        else:
+            return None
+    return SearchFunction(_hasParent)
+
+def parent(fn = identity):
+    def _parent(t):
+        p = t.parent
         return fn(p)
     return SearchFunction(_hasParent)
 
