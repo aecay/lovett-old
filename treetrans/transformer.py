@@ -44,8 +44,7 @@ class TreeTransformer:
             t[pos] = T.ParentedTree(name, [temp])
         return self
 
-    # TODO: option to move left instead of right
-    def addParentNodeSpanning(self, name, fn, immediate = False):
+    def addParentNodeSpanning(self, name, fn, immediate = False, right = True):
         # Must be done in two steps because otherwise we shit all over
         # our list of positions.  ...then we switched to storing matches
         # as trees, not positions, but why mess with what works?
@@ -62,11 +61,17 @@ class TreeTransformer:
             acc = []
             p = m
             while not done:
-                p = p.right_sibling
+                if right:
+                    p = p.right_sibling
+                else:
+                    p = p.left_sibling
                 if p:
                     acc.append(p)
                     if fn(p):
                         done = True
+                        if not right:
+                            # I'm not sure if this is strictly necessary
+                            acc.reverse()
                         to_perform.append((m, acc))
                     if immediate:
                         done = True
@@ -83,21 +88,25 @@ class TreeTransformer:
             t[p] = T.ParentedTree(name, [node] + lst)
         return self
 
-    # TODO: move left instead of right
-    def extendUntil(self, fn, immediate = False):
-        to_perform = []
+    def extendUntil(self, fn, immediate = False, right = True):
         for m in self._matches:
             p = m
             acc = []
             done = False
             while not done:
-                p = p.right_sibling
+                if right:
+                    p = p.right_sibling
+                else:
+                    p = p.left_sibling
                 if p:
                     acc.append(p)
                     if fn(p):
                         for a in acc:
                             del self._tree[a.treepos]
-                            m.append(a)
+                            if right:
+                                m.append(a)
+                            else:
+                                m.insert(0,a)
                         done = True
                     if immediate:
                         done = True
