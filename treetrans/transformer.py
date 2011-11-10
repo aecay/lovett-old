@@ -25,11 +25,19 @@ class TreeTransformer:
 
     # Should we remove this?  It is probably never necessary, except for
     # convenience, and it makes things complicated (can filter turn a
-    # single match into a list?)
-    def filterMatches(self, fn = lambda x: True):
-        vals = [fn(p) for p in self._matches]
-        self._matches = [self._matches[i] for i in range(len(self._matches)) \
-                             if vals[i]]
+    # single match into a list?)  Update: Don't remove -- in tree
+    # building, it is useful to move pointer -- but perhaps give a
+    # better name
+    def filterMatches(self, fn = lambda x: x):
+        new_matches = []
+        for m in self._matches:
+            res = fn(m)
+            if res:
+                if isinstance(res, list) and not isinstance(res, T.Tree):
+                    new_matches.extend(res)
+                else:
+                    new_matches.append(res)
+        self._matches = new_matches
         return self
 
     # TODO: make sure that the modification functions are updateing
