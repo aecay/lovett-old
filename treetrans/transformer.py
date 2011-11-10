@@ -58,15 +58,14 @@ class TreeTransformer:
         # our list of positions.  ...then we switched to storing matches
         # as trees, not positions, but why mess with what works?
 
-        # TODO: actually, we have to do each transformation as we find
+        # DONE: actually, we have to do each transformation as we find
         # it.  Otherwise, we will do weird things if we have ex. N N ADJ
         # and we try to extend NP over N...ADJ.
 
-        # list of tuples of (beginning node, node list)
-        to_perform = []
+        barf = T.ParentedTree("BARF", [])
+        t = self._tree
         for m in self._matches:
             done = False
-            failed = False
             acc = []
             p = m
             while not done:
@@ -81,20 +80,16 @@ class TreeTransformer:
                         if not right:
                             # I'm not sure if this is strictly necessary
                             acc.reverse()
-                        to_perform.append((m, acc))
+                        for n in acc:
+                            del t[n.treepos]
+                        pp = m.treepos
+                        t[pp] = barf
+                        t[pp] = T.ParentedTree(name, [m] + acc)
                     if immediate:
                         done = True
                 else:
                     done = True
             
-        for (node, lst) in to_perform:
-            barf = T.ParentedTree("BARF", [])
-            t = self._tree
-            for n in lst:
-                del t[n.treepos]
-            p = node.treepos
-            t[p] = barf
-            t[p] = T.ParentedTree(name, [node] + lst)
         return self
 
     def extendUntil(self, fn, immediate = False, right = True):
