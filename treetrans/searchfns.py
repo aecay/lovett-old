@@ -209,6 +209,17 @@ def daughters(fn = identity):
             return [v for v in vals if v]
     return SearchFunction(_daughters)
 
+def firstDaughter(fn = identity):
+    def _firstDaughter(t):
+        if isinstance(t, str):
+            return None
+        else:
+            for st in t:
+                if fn(st):
+                    return st
+            return None
+    return SearchFunction(_firstDaughter)
+
 def hasXSister(fn = identity, sisterFn = allSisters):
     def _hasXSister(t):
         vals = [fn(s) for s in sisterFn(t)]
