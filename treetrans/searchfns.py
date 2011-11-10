@@ -14,6 +14,10 @@ class SearchFunction:
             # Handle lists, returned by sister() etc.  this is looking
             # ugly, as we also handle lists in the treetransformer class
             if isinstance(arg, list) and not isinstance(arg, T.Tree):
+                # TODO: this branch appears never to get called.  It
+                # looks like a bottleneck in performance, so verify this
+                # and remove.
+                raise Error("isinstance in __call__, arg is %s" % arg)
                 return map(self.fn, arg)
             else:
                 return self.fn(arg)
