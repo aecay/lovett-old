@@ -182,6 +182,8 @@ default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
 def hasLemma(lemma):
     if hasattr(lemma, "pattern"):
         lemma = lemma.pattern
+    else:
+        lemma = re.escape(lemma)
     return hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
 def hasWord(word):
     if hasattr(word, "pattern"):
