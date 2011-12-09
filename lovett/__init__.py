@@ -1,1 +1,1 @@
-__all__ = ["transformer"]
+__all__ = ["transformer", "searchfns"]
