@@ -1,11 +1,20 @@
+Testing:
+- Add a unit test framework, begin using it
+
+Annotald:
+- Write code to integrate with Annotald, for revision queries
+
 Optimization:
 - Use Cython to override nltk.tree.Tree.__getitem__, which gets called a ton?
+
+API:
+- instead of hasImmRightSister, use hasSister(imm=True, right=True)?
 
 Bugs:
 tt.findNodes(hasLabel("C") & hasLemma("0") & immRightSister())
 tt.addParentNodeSpanning("IP-SUB", hasLabel(sentence_end_rx))
 
-doesn't dtrt in this structure:
+doesn't dtrt in this structure: (fixed??)
 
 (CP-REL
   (C 0-0)
