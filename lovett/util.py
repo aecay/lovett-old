@@ -25,11 +25,10 @@ def indexOfTree(tree):
         # This is an EC
         temp = tree[0].split("-")
         ret = 0
-        try:
-            if len(temp) == 2 and temp[-1].isdigit():
-                ret = int(temp[-1])
-            elif len(temp) == 3 abd temp[-2].isdigit():
-                ret = int(temp[-2])
+        if len(temp) == 2 and temp[-1].isdigit():
+            ret = int(temp[-1])
+        elif len(temp) == 3 and temp[-2].isdigit():
+            ret = int(temp[-2])
         return ret
     else:
         temp = tree.node.split("-")
@@ -45,11 +44,10 @@ def removeIndexFromTree(tree):
     if isinstance(tree[0], str) and tree[0][0] == "*":
         # This is an EC
         temp = tree[0].split("-")
-        try:
-            if len(temp) == 2 and temp[-1].isdigit():
-                temp.pop()
-            elif len(temp) == 3 and temp[-2].isdigit():
-                temp.pop(-2)
+        if len(temp) == 2 and temp[-1].isdigit():
+            temp.pop()
+        elif len(temp) == 3 and temp[-2].isdigit():
+            temp.pop(-2)
         tree[0] = temp.join("-")
     else:
         temp = tree.node.split("-")
