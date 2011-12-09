@@ -45,14 +45,18 @@ class TreeTransformer:
     # TODO: make sure that the modification functions are updateing
     # matches in a coherent way.  Ex. prune should empty matches.
 
-    def addParentNode(self, name):
+    def addParentNode(self, name, moveIndex = False):
         for m in self._matches:
             barf = T.ParentedTree("BARF", [])
             t = self._tree
             pos = m.treepos
-            temp = t[pos]
+            old = t[pos]
             t[pos] = barf
-            t[pos] = T.ParentedTree(name, [temp])
+            new = T.ParentedTree(name, [old])
+            if moveIndex:
+                index = util.removeIndexFromTree(old)
+                util.addIndexToTree(index, new)
+            t[pos] = new
         return self
 
     def addParentNodeSpanning(self, name, fn, immediate = False, right = True):
