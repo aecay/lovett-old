@@ -1,0 +1,18 @@
+Optimization:
+- Use Cython to override nltk.tree.Tree.__getitem__, which gets called a ton?
+
+Bugs:
+tt.findNodes(hasLabel("C") & hasLemma("0") & immRightSister())
+tt.addParentNodeSpanning("IP-SUB", hasLabel(sentence_end_rx))
+
+doesn't dtrt in this structure:
+
+(CP-REL
+  (C 0-0)
+  (FOO bar)
+  (FOO bar)
+  (CP-REL
+    (C 0-0)
+    (FOO bar)
+    (FOO bar)
+    (. .-.)))
