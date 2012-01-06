@@ -228,11 +228,15 @@ def firstDaughter(fn = identity):
 
 def hasXSister(fn = identity, sisterFn = allSisters):
     def _hasXSister(t):
-        vals = [fn(s) for s in sisterFn(t)]
-        if reduce(functionalOr, vals):
-            return t
+        sisters = sisterFn(t)
+        if sisters:
+            vals = [fn(s) for s in sisters]
+            if reduce(functionalOr, vals):
+                return t
+            else:
+                return None
         else:
-            return None
+           return None     
     return SearchFunction(_hasXSister)
 
 def hasSister(fn = identity):
