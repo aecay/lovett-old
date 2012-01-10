@@ -1,1 +1,4 @@
 *.pyc
+
+# Testing/bugfinding code, not for public consumption
+examples/
