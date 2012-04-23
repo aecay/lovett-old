@@ -196,6 +196,9 @@ def hasWord(word):
         word = word.pattern
     return hasLeafLabel(re.compile("^(" + word + ")-"))
 
+def hasDashTag(tag):
+    return hasLabel(re.compile(".*-" + tag + "(-|$)"))
+
 def hasDaughter(fn = identity):
     def _hasDaughter(t):
         if isinstance(t, str):
@@ -297,6 +300,21 @@ def hasAncestor(fn = identity):
             return None
     return SearchFunction(_hasAncestor)
 
+def ancestor(fn = identity):
+    def _ancestor(t):
+        # All these null checks should be able to be factored out.  but then
+        # we have to call through the wrapped fn, not the underscore version
+        # as is done here.
+        if t:
+            p = t.parent
+            if fn(p):
+                return p
+            else:
+                return _ancestor(p)
+        else:
+            return None
+    return SearchFunction(_ancestor)
+
 def leftEdge(fn = identity):
     def _leftEdge(t):
         if fn(t):
@@ -323,6 +341,14 @@ def iPrecedes(fn = lambda x: x):
             this_node = this_node.parent
         return None
     return SearchFunction(_iPrecedes)
+
+def isLeaf():
+    def _isLeaf(t):
+        if not isinstance(t[0], T.Tree):
+            return t
+        else:
+            return None
+    return SearchFunction(_isLeaf)
 
 # Function modifiers
 
