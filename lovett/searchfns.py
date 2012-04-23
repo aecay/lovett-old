@@ -244,7 +244,7 @@ def hasXSister(fn = identity, sisterFn = allSisters):
 def hasSister(fn = identity):
     return hasXSister(fn, allSisters)
 def hasLeftSister(fn = identity):
-    return hasXsister(fn, allLeftSisters)
+    return hasXSister(fn, allLeftSisters)
 def hasRightSister(fn = identity):
     return hasXSister(fn, allRightSisters)
 def hasImmRightSister(fn = identity):
@@ -283,7 +283,7 @@ def parent(fn = identity):
     def _parent(t):
         p = t.parent
         return fn(p)
-    return SearchFunction(_hasParent)
+    return SearchFunction(_parent)
 
 def hasAncestor(fn = identity):
     def _hasAncestor(t):
