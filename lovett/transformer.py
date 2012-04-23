@@ -62,7 +62,8 @@ class TreeTransformer:
             t[pos] = new
         return self
 
-    def addParentNodeSpanning(self, name, fn, immediate = False, right = True):
+    def addParentNodeSpanning(self, name, fn, immediate = False, right = True,
+                              to_end = False):
         # Must be done in two steps because otherwise we shit all over
         # our list of positions.  ...then we switched to storing matches
         # as trees, not positions, but why mess with what works?
