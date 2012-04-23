@@ -147,8 +147,8 @@ class TreeTransformer:
             if coindex:
                 index = self._max_trace + 1
                 # TODO(?): a way to add gapping indices with = instead of -
-                addIndexToTree(index, m)
-                addIndexToTree(index, to_insert)
+                util.addIndexToTree(index, m)
+                util.addIndexToTree(index, to_insert)
                 self._max_trace = index
             if not before:
                 pi = pi + 1
