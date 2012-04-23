@@ -74,10 +74,9 @@ class TreeTransformer:
         barf = T.ParentedTree("BARF", [])
         t = self._tree
         for m in self._matches:
-            done = False
             acc = []
             p = m
-            while not done:
+            while True:
                 if right:
                     p = p.right_sibling
                 else:
@@ -85,7 +84,6 @@ class TreeTransformer:
                 if p:
                     acc.append(p)
                     if fn(p):
-                        done = True
                         if not right:
                             # I'm not sure if this is strictly necessary
                             acc.reverse()
@@ -94,10 +92,11 @@ class TreeTransformer:
                         pp = m.treepos
                         t[pp] = barf
                         t[pp] = T.ParentedTree(name, [m] + acc)
+                        break
                     if immediate:
-                        done = True
+                        break
                 else:
-                    done = True
+                    break
             
         return self
 
