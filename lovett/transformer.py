@@ -1,6 +1,9 @@
 import nltk.tree as T
 import util
 
+# TODO: addDashTag
+# TODO: look at conversations w jana for good ideas
+
 class TreeTransformer:
     def __init__(self, tree):
         # Do not mutate the tree we are given -- make a copy for our use.
@@ -98,6 +101,8 @@ class TreeTransformer:
             
         return self
 
+    # Instead of immediate -- another function extendOne?
+    # also need more general movt fns.
     def extendUntil(self, fn, immediate = False, right = True):
         for m in self._matches:
             p = m
