@@ -188,11 +188,10 @@ class TreeTransformer:
 
 
 
-t = T.ParentedTree("( (IP (Q very) (, ,) (ADV slowly) (N foo) (V bar) (D baz) (ADJ spam) (N quux) (D irrelevant)))")
-
-tt = TreeTransformer(t)
 
 def test():
+    t = T.ParentedTree("( (IP (Q very) (, ,) (ADV slowly) (N foo) (V bar) (D baz) (ADJ spam) (N quux) (D irrelevant)))")
+    tt = TreeTransformer(t)
     tmp = TreeTransformer(t)
     tmp.findNodes(hasLabel("N"))
     print "haslabel N"
