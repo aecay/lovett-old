@@ -155,6 +155,12 @@ class TreeTransformer:
             p.insert(pi, to_insert)
         return self
 
+    def addDaughter(self, label = "XXX", word = "X-X", tree = None):
+        for m in self._matches:
+            to_insert = tree or T.ParentedTree(label, [word])
+            m.insert(0, to_insert)
+        return self
+
 # TODO: add a coindex function, operating on a dual selection
 
     def prune(self):
