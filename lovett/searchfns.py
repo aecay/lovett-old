@@ -194,9 +194,12 @@ def hasLemma(lemma):
     else:
         lemma = re.escape(lemma)
     return hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
+
 def hasWord(word):
     if hasattr(word, "pattern"):
         word = word.pattern
+    else:
+        word = re.escape(word)
     return hasLeafLabel(re.compile("^(" + word + ")-"))
 
 def hasDashTag(tag):
