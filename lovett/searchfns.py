@@ -178,7 +178,10 @@ def hasLeafLabel(label):
                 if exact_match:
                     return t
                 else:
-                    return None
+                    if t[0][slice(len(label) + 1)] == label + "-":
+                        return t
+                    else:
+                        return None
         else:
             return None
     return SearchFunction(_hasLeafLabel)
