@@ -25,3 +25,14 @@ doesn't dtrt in this structure: (fixed??)
     (FOO bar)
     (FOO bar)
     (. .-.)))
+
+Case queries for Jana:
+
+NA = noun accusative
+N = nom
+N$ = gen
+ND = dat
+
+NPRSA = proper plural acc
+
+N, D, ADJ, Q, NPR, VPR(P), 
