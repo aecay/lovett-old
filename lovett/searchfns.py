@@ -91,7 +91,9 @@ def allRightSisters(t):
     return res
 
 def allSisters(t):
-    return allLeftSisters(t).extend(allRightSisters(t))
+    # Damn methods that return None instead of self
+    s = allLeftSisters(t).extend(allRightSisters(t))
+    return s
 
 def nextLeftSister(t):
     res = None
