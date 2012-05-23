@@ -73,7 +73,7 @@ def shouldIgnore(t):
     return ignore_function(t) or default_ignore_function(t)
 
 # Access functions
-    
+
 def allLeftSisters(t):
     res = []
     while t:
@@ -144,7 +144,7 @@ def hasLabel(label, exact = False):
             to_match = t.node
         else:
             return None
-            
+
         if hasattr(label, "match"):
             if label.match(to_match):
                 return t
@@ -248,7 +248,7 @@ def hasXSister(fn = identity, sisterFn = allSisters):
             else:
                 return None
         else:
-           return None     
+           return None
     return SearchFunction(_hasXSister)
 
 def hasSister(fn = identity):
@@ -369,7 +369,7 @@ def reduceHack(x,y):
     # else:
     #     x.append(y)
     # return x
-    
+
     x.extend(y)
     return x
 
@@ -382,7 +382,7 @@ def deep(fn):
             # Daughters also returns a list, so we get nested lists.
             # The reduce un-nests them.
             ds = daughters(deep(fn))(t)
-            if ds: 
+            if ds:
                 ds = reduce(reduceHack, [l for l in daughters(deep(fn))(t) \
                                              if hasattr(l, "__iter__")])
             res = [fn(t)]
