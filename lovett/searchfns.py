@@ -519,6 +519,79 @@ def isLeaf():
             return None
     return SearchFunction(_isLeaf)
 
+# TODO: need a hasCoIndexed function
+def coIndexed(fn = identity):
+    """Tests if any nodes coindexed with the original node match a
+    predicate.  Returns the matching coindexed nodes.
+
+    @param fn: the predicate to test against
+
+    """
+    def _coIndexed(t):
+        theIdx = indexOfTree(t)
+        c = t.root.subtrees(lambda x: indexOfTree(x) == theIdx)
+        filter(lambda x: x != t, c)
+        filter(fn, c)
+        return c
+    return SearchFunction(_coIndexed)
+
+def antecedent(fn = identity):
+    """Tests whether the antecedent of a node matches a predicate, and
+    returns the antecedent if so.  The antecedent of a node is the
+    unique node which is coindexed with that node, and is not itself a
+    trace.  If the original node is not a trace, no match is returned.
+
+    @param fn: the predicate to test against
+
+    """
+    # TODO: test whether the target node is a trace
+    def _antecedent(t):
+        theIdx = util.indexOfTree(t)
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
+                           isinstance(x[0], T.Tree))
+        if len(c) == 1:
+            if fn(c[0]):
+                return c[0]
+            else:
+                return None
+        else:
+            return None
+    return SearchFunction(_antecedent)
+
+def hasAntecedent(fn = identity):
+    """Tests whether the antecedent of a node matches a predicate, and
+    returns the original node if so.  The antecedent of a node is the
+    unique node which is coindexed with that node, and is not itself a
+    trace.  If the original node is not a trace, no match is returned.
+
+    @param fn: the predicate to test against
+
+    """
+    def _hasAntecedent(t):
+        theIdx = util.indexOfTree(t)
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
+                           isinstance(x[0], T.Tree))
+        # Need to convert generator -> list to check length
+        c = list(c)
+        if len(c) == 1:
+            if fn(c[0]):
+                return t
+            else:
+                return None
+        else:
+            return None
+    return SearchFunction(_hasAntecedent)
+
+def isTrace():
+    """Tests whether a node is a trace."""
+    def _isTrace(t):
+        if util.isLeafNode(t) and t[0][0:3] == "*T*":
+            return t
+        else:
+            return None
+    return SearchFunction(_isTrace)
+
+
 # Function modifiers
 
 def reduceHack(x,y):
