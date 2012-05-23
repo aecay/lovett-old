@@ -4,6 +4,13 @@ import re
 # Match functions
 
 class SearchFunction:
+    """This class wraps a function for searching parse trees.  It
+    overrides the (bitwise) C{&}, C{|}, and C{~} operators (and, or, and
+    not respectively) to allow Boolean combinations of search terms.
+
+    TODO: calling and return conventions ofr such a function
+
+    """
     def __init__(self, fn):
         self.fn = fn
 
@@ -138,6 +145,18 @@ def identity(x):
 
 # TODO: handle ignore
 def hasLabel(label, exact = False):
+    """Tests if a node has a given label.
+
+    @param label: The label to test for.  If a string, the behavior is
+        controlled by the C{exact} argument.  If a regex, then it is
+        matched against the node label of the tree.
+
+    @param exact: Controls how to match a string against a label.
+        C{True} requires C{label} to match exactly the entire label.
+        C{False} (the default) allows C{label} to match a node with
+        extra trailing dash tags.
+
+    """
     def _hasLabel(t):
         to_match = ""
         if isinstance(t, T.Tree):
@@ -166,7 +185,20 @@ def hasLabel(label, exact = False):
     return SearchFunction(_hasLabel)
 
 # TODO: handle ignore
+# TODO: rename to hasText?
 def hasLeafLabel(label):
+    """Tests if a leaf node has the given text.
+
+    No match is returned if the target node is not a leaf node.
+
+    This is a low-level function, not intended for use by end users.
+    (TODO: don't export it)
+
+    @param label: the text to test against the node's text.  If a
+        string, it is matched against the node's text exactly, or with
+        trailing dash tags removed.
+
+    """
     def _hasLeafLabel(t):
         if len(t) == 1 and isinstance(t[0], basestring):
             if hasattr(label, "match"):
@@ -190,13 +222,28 @@ def hasLeafLabel(label):
 default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
 
 def hasLemma(lemma):
+    """Tests if a node has the given lemma.
+
+    @param lemma: The lemma to look for.  Can be a regular expression or
+        a string (the latter is matched exactly against the lemma).
+
+    """
     if hasattr(lemma, "pattern"):
         lemma = lemma.pattern
     else:
         lemma = re.escape(lemma)
     return hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
 
+# TODO: make aware of different formats (deep, dash)
+# is this redundant with hasLeafLabel?  Should this be called hasText?
 def hasWord(word):
+    """Tests if a node has the given word (exact text).
+
+    @param word: the text to look for.  Matched rigidly against the
+        ur-text of the leaf node.  No match if the target node is not a
+        leaf.
+
+    """
     if hasattr(word, "pattern"):
         word = word.pattern
     else:
@@ -204,9 +251,22 @@ def hasWord(word):
     return hasLeafLabel(re.compile("^(" + word + ")-"))
 
 def hasDashTag(tag):
+    """Tests if the given node has a dash tag.
+
+    @param tag: the dash tag to look for.
+
+    """
     return hasLabel(re.compile(".*-" + tag + "(-|$)"))
 
 def hasDaughter(fn = identity):
+    """Tests if a node has a daughter matching a predicate.  If so, the
+    original node (not the daughter) is returned.  Matching only looks
+    at immediate daughters -- to extend further down the tree, see the
+    L{deep} function.
+
+    @param fn: the predicate to test daughters against.
+
+    """
     def _hasDaughter(t):
         if isinstance(t, basestring):
             return None
@@ -219,6 +279,13 @@ def hasDaughter(fn = identity):
     return SearchFunction(_hasDaughter)
 
 def daughters(fn = identity):
+    """Finds and returns all daughters of a node which match a
+    predicate.  Only looks at immediate daughters -- see L{deep} for
+    deep matching.
+
+    @param fn: the predicate to test daughters against.
+
+    """
     def _daughters(t):
         if isinstance(t, basestring):
             return None
@@ -228,6 +295,12 @@ def daughters(fn = identity):
     return SearchFunction(_daughters)
 
 def firstDaughter(fn = identity):
+    """Returns the first (left-to-right) daughter of a node which
+    matches a predicate, or nothing if no daughters match.
+
+    @param fn: the predicate to test against.
+
+    """
     def _firstDaughter(t):
         if isinstance(t, basestring):
             return None
@@ -239,6 +312,10 @@ def firstDaughter(fn = identity):
     return SearchFunction(_firstDaughter)
 
 def hasXSister(fn = identity, sisterFn = allSisters):
+    """Internal function.
+
+    TODO: document, don't export
+    """
     def _hasXSister(t):
         sisters = sisterFn(t)
         if sisters:
@@ -252,35 +329,90 @@ def hasXSister(fn = identity, sisterFn = allSisters):
     return SearchFunction(_hasXSister)
 
 def hasSister(fn = identity):
+    """Tests if a node has a sister matching a predicate, and returns
+    the original node if so.
+
+    @param fn: the predicate to test against
+
+    """
     return hasXSister(fn, allSisters)
 def hasLeftSister(fn = identity):
+    """Like L{hasSister}, but only considers sisters to the left of the
+    node.
+
+    """
     return hasXSister(fn, allLeftSisters)
 def hasRightSister(fn = identity):
+    """Like L{hasSister}, but only considers sisters to the right of the
+    node.
+
+    """
     return hasXSister(fn, allRightSisters)
 def hasImmRightSister(fn = identity):
+    """Like L{hasSister}, but only considers the immediate right sister
+    of the original node.
+
+    """
     return hasXSister(fn, nextRightSister)
 def hasImmLeftSister(fn = identity):
+    """Like L{hasSister}, but only considers the immediate left sister
+    of the original node.
+
+    """
     return hasXSister(fn, nextLeftSister)
 
 def sistersX(fn = identity, sisterFn = allSisters):
+    """Internal function
+
+    TODO: document, don't export
+
+    """
     def _sisters(t):
         vals = [fn(s) for s in sisterFn(t)]
         return [v for v in vals if v]
     return SearchFunction(_sisters)
 
 def sisters(fn = identity):
+    """Tests if a node has any sisters matching a predicate, and returns
+    the sister(s) if so.
+
+    @param fn: the predicate to test against
+
+    """
     return sistersX(fn, allSisters)
 def leftSisters(fn = identity):
+    """Like L{sisters}, but only considers sisters to the left of the
+    node.
+
+    """
     return sistersX(fn, leftSisters)
 def rightSisters(fn = identity):
+    """Like L{sisters}, but only considers sisters to the right of the
+    node.
+
+    """
     return sistersX(fn, rightSisters)
 def immLeftSister(fn = identity):
+    """Like L{sisters}, but only considers the immediate left sister
+    of the original node.
+
+    """
     return sistersX(fn, nextLeftSister)
 def immRightSister(fn = identity):
+    """Like L{sisters}, but only considers the immediate right sister
+    of the original node.
+
+    """
     return sistersX(fn, nextRightSister)
 
 # TODO: how to handle ignoring parent?
 def hasParent(fn = identity):
+    """Tests if a node's parent matches a predicate, and returns the
+    original node if so.
+
+    @param fn: the predicate to test against
+
+    """
     def _hasParent(t):
         p = t.parent
         if fn(p):
@@ -290,12 +422,24 @@ def hasParent(fn = identity):
     return SearchFunction(_hasParent)
 
 def parent(fn = identity):
+    """Tests if a node's parent matches a predicate, and returns the
+    parent node if so.
+
+    @param fn: the predicate to test against
+
+    """
     def _parent(t):
         p = t.parent
         return fn(p)
     return SearchFunction(_parent)
 
 def hasAncestor(fn = identity):
+    """Tests if any of a node's ancestors match a predicate, and returns
+    the original node if so.
+
+    @param fn: the predicate to test against
+
+    """
     def _hasAncestor(t):
         if t:
             res = hasParent(fn)(t)
@@ -308,6 +452,12 @@ def hasAncestor(fn = identity):
     return SearchFunction(_hasAncestor)
 
 def ancestor(fn = identity):
+    """Tests if any of a node's ancestors match a predicate, and returns
+    the first matching ancestor.
+
+    @param fn: the predicate to test against
+
+    """
     def _ancestor(t):
         # All these null checks should be able to be factored out.  but then
         # we have to call through the wrapped fn, not the underscore version
@@ -323,6 +473,11 @@ def ancestor(fn = identity):
     return SearchFunction(_ancestor)
 
 def leftEdge(fn = identity):
+    """Internal function.
+
+    TODO: document, don't export
+
+    """
     def _leftEdge(t):
         if fn(t):
             return t
@@ -335,7 +490,13 @@ def leftEdge(fn = identity):
             return None
     return SearchFunction(_leftEdge)
 
-def iPrecedes(fn = lambda x: x):
+def iPrecedes(fn = identity):
+    """Tests if a node immediately precedes (linearly) a node matching a
+    predicate, and returns the original node if so.
+
+    @param fn: the predicate to test against
+
+    """
     def _iPrecedes(t):
         this_node = t
         while this_node:
@@ -374,6 +535,15 @@ def reduceHack(x,y):
     return x
 
 def deep(fn):
+    """Recursively applies a predicate to the target node and all
+    descendants at any depth, returning any and all matching
+    descendants.
+
+    TODO: usage examples
+
+    @param fn: the predicate to deepen
+
+    """
     def _deep(t):
         # TODO: We have null handling here is because we don't go
         # through SearchFunction again.  Should we?
@@ -395,6 +565,7 @@ def deep(fn):
     return SearchFunction(_deep)
 
 def ignoring(ignore_fn, fn):
+    """Ignore nodes functionality, currently inoperative."""
     def _ignoring(t):
         old_ignore = setIgnore(ignore_fn)
         res = fn(t)
@@ -403,6 +574,8 @@ def ignoring(ignore_fn, fn):
     return SearchFunction(_ignoring)
 
 # Utility functions
+
+# TODO: don't export these below
 
 # Boolean operations as language keywords is dumb
 def functionalSSOr(x, y):
