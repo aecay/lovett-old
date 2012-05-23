@@ -158,6 +158,7 @@ def hasLabel(label, exact = False):
                 else:
                     return None
             else:
+                # TODO: gapping indices with =
                 if exact_match or to_match[slice(len(label)+1)] == label + "-":
                     return t
                 else:
