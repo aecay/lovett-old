@@ -2,3 +2,7 @@
 
 # Testing/bugfinding code, not for public consumption
 examples/
+
+# testing out various documentation options
+doc/
+sphinx-doc/
