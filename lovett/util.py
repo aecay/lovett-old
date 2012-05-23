@@ -1,4 +1,5 @@
 import sys # for debugging only
+import nltk.tree as T
 
 ### String representation of trees
 def printTree(tree, indent = 0):
@@ -103,3 +104,10 @@ def removeIndexFromTree(tree):
             temp.pop()
         tree.node = temp.join("-")
     return old_index
+
+
+def isLeafNode(t):
+    if not isinstance(t[0], T.Tree):
+        return True
+    else:
+        return False

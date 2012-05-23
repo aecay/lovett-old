@@ -511,8 +511,9 @@ def iPrecedes(fn = identity):
     return SearchFunction(_iPrecedes)
 
 def isLeaf():
+    """Tests if a node is a leaf node."""
     def _isLeaf(t):
-        if not isinstance(t[0], T.Tree):
+        if util.isLeafNode(t):
             return t
         else:
             return None
