@@ -168,7 +168,7 @@ def hasLabel(label, exact = False):
 # TODO: handle ignore
 def hasLeafLabel(label):
     def _hasLeafLabel(t):
-        if len(t) == 1 and isinstance(t[0], str):
+        if len(t) == 1 and isinstance(t[0], basestring):
             if hasattr(label, "match"):
                 if label.match(t[0]):
                     return t
@@ -208,7 +208,7 @@ def hasDashTag(tag):
 
 def hasDaughter(fn = identity):
     def _hasDaughter(t):
-        if isinstance(t, str):
+        if isinstance(t, basestring):
             return None
         else:
             vals = [fn(d) for d in allDaughters(t)]
@@ -220,7 +220,7 @@ def hasDaughter(fn = identity):
 
 def daughters(fn = identity):
     def _daughters(t):
-        if isinstance(t, str):
+        if isinstance(t, basestring):
             return None
         else:
             vals = [fn(d) for d in allDaughters(t)]
@@ -229,7 +229,7 @@ def daughters(fn = identity):
 
 def firstDaughter(fn = identity):
     def _firstDaughter(t):
-        if isinstance(t, str):
+        if isinstance(t, basestring):
             return None
         else:
             for st in t:
