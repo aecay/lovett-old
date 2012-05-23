@@ -17,7 +17,7 @@ class SearchFunction:
                 # TODO: this branch appears never to get called.  It
                 # looks like a bottleneck in performance, so verify this
                 # and remove.
-                raise Error("isinstance in __call__, arg is %s" % arg)
+                raise Exception("isinstance in __call__, arg is %s" % arg)
                 return map(self.fn, arg)
             else:
                 return self.fn(arg)
