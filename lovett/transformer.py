@@ -19,13 +19,11 @@ class TreeTransformer:
     # TODO: add shortcut to call with just a string -> hasLabel
     def findNodes(self, fn = lambda x: x):
         self._matches = []
-        for p in self._tree.treepositions():
-            res = fn(self._tree[p])
+        for p in self._tree.subtrees():
+            res = fn(p)
             if res:
-                if isinstance(res, list) and not isinstance(res, T.Tree):
-                    self._matches.extend(res)
-                else:
-                    self._matches.append(res)
+                # Fuck, this is excruciating
+                self._matches.extend(list(util.iter_flatten([res])))
         return self
 
     # Should we remove this?  It is probably never necessary, except for
@@ -38,10 +36,7 @@ class TreeTransformer:
         for m in self._matches:
             res = fn(m)
             if res:
-                if isinstance(res, list) and not isinstance(res, T.Tree):
-                    new_matches.extend(res)
-                else:
-                    new_matches.append(res)
+                new_matches = list(util.iter_flatten([res]))
         self._matches = new_matches
         return self
 
