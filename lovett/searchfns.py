@@ -8,7 +8,7 @@ class SearchFunction:
     overrides the (bitwise) C{&}, C{|}, and C{~} operators (and, or, and
     not respectively) to allow Boolean combinations of search terms.
 
-    TODO: calling and return conventions ofr such a function
+    TODO: calling and return conventions for such a function
 
     """
     def __init__(self, fn):
@@ -510,6 +510,7 @@ def iPrecedes(fn = identity):
         return None
     return SearchFunction(_iPrecedes)
 
+# TODO: don't count traces etc as leaves?  and word-level conjunction
 def isLeaf():
     """Tests if a node is a leaf node."""
     def _isLeaf(t):
