@@ -111,3 +111,12 @@ def isLeafNode(t):
         return True
     else:
         return False
+
+def iter_flatten(iterable):
+    it = iter(iterable)
+    for e in it:
+        if isinstance(e, (list, tuple)) and not isinstance(e, T.Tree):
+            for f in iter_flatten(e):
+                yield f
+        else:
+            yield e
