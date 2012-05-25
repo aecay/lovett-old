@@ -520,6 +520,47 @@ def isLeaf():
             return None
     return SearchFunction(_isLeaf)
 
+def isRoot():
+    """Tests if this node is the root of its tree.  The root is the top
+    of the actual sentence, not the higher node dominating the sentence
+    as well as associated metadata.
+
+    """
+    def _isRoot(t):
+        if t.parent == t.root:
+            return t
+        else:
+            return None
+    return SearchFunction(_isRoot)
+
+def daughterCount(n, match = "equal"):
+    """Tests if the target node has a certain number of daughters.
+
+    @param n: the desired number of daughters
+
+    @param match: controls the behavior of the matching.  One of
+        \"equal\", \"less\", or \"greater\".
+
+    """
+    if match != "equal" and match != "less" and match != "greater":
+        raise Exception("match argument to daughterCount is misspecified")
+    def _daughterCount(t):
+        have_match = False
+        if match == "equal":
+            if len(t) == n:
+                have_match = True
+        elif match == "less":
+            if len(t) < n:
+                have_match = True
+        elif match == "greater":
+            if len(t) > n:
+                have_match = True
+        if have_match:
+            return t
+        else:
+            return None
+    return SearchFunction(_daughterCount)
+
 # TODO: need a hasCoIndexed function
 def coIndexed(fn = identity):
     """Tests if any nodes coindexed with the original node match a
@@ -592,6 +633,36 @@ def isTrace():
         else:
             return None
     return SearchFunction(_isTrace)
+
+def sharesLabelWith(fn = identity, all = False):
+    """Test whether a node shares a label with another.
+
+    The supplied search function picks out the set of nodes, beginning
+    with the current node, to test for same-label-ness.
+
+    @param f: which nodes to test
+
+    @param all: whether all nodes picked out by C{fn} should match, or
+    (the default) just one
+
+    """
+    def _sharesLabelWith(t):
+        the_label = t.node
+        candidates = fn(t)
+        # TODO: If we mandated that searchfns return lists, then there
+        # would be no need to do this...
+        for c in util.iter_flatten([candidates]):
+            if c.node == the_label:
+                if not all:
+                    return t
+            else:
+                if all:
+                    return None
+        if all:
+            return t
+        else:
+            return None
+    return SearchFunction(_sharesLabelWith)
 
 
 # Function modifiers
