@@ -100,8 +100,7 @@ def allRightSisters(t):
 
 def allSisters(t):
     # Damn methods that return None instead of self
-    s = allLeftSisters(t).extend(allRightSisters(t))
-    return s
+    return (allLeftSisters(t) or []) + (allRightSisters(t) or [])
 
 def nextLeftSister(t):
     res = None
