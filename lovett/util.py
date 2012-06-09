@@ -48,7 +48,7 @@ def getLargestIndex(tree):
 def addIndexToTree(index, tree):
     # TODO: do dash-tags go inside or outside index?
     try:
-        if isinstance(tree[0], str) and tree[0][0] == "*":
+        if isinstance(tree[0], basestring) and tree[0][0] == "*":
             # This is an EC; so add index to the leaf
             temp = tree[0].split("-")
             # This is a bogus test for the presence of a lemma, in general.  But
@@ -66,7 +66,7 @@ def addIndexToTree(index, tree):
 
 def indexOfTree(tree):
     try:
-        if isinstance(tree[0], str) and tree[0][0] == "*":
+        if isinstance(tree[0], basestring) and tree[0][0] == "*":
             # This is an EC
             temp = tree[0].split("-")
             ret = 0
@@ -89,7 +89,7 @@ def indexOfTree(tree):
 
 def removeIndexFromTree(tree):
     old_index = indexOfTree(tree)
-    if isinstance(tree[0], str) and tree[0][0] == "*":
+    if isinstance(tree[0], basestring) and tree[0][0] == "*":
         # This is an EC
         temp = tree[0].split("-")
         if len(temp) == 2 and temp[-1].isdigit():
