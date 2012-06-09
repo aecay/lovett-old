@@ -169,6 +169,7 @@ class TreeTransformer:
 
     # TODO: raiseNode
 
+    # TODO: @property
     def matches(self):
         return self._matches
 
