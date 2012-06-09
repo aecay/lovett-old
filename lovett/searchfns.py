@@ -611,8 +611,11 @@ def antecedent(fn = identity):
     # TODO: test whether the target node is a trace
     def _antecedent(t):
         theIdx = util.indexOfTree(t)
+        if theIdx == 0:
+            return None
         c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
                            isinstance(x[0], T.Tree))
+        c = list(c)
         if len(c) == 1:
             if fn(c[0]):
                 return c[0]
@@ -633,6 +636,8 @@ def hasAntecedent(fn = identity):
     """
     def _hasAntecedent(t):
         theIdx = util.indexOfTree(t)
+        if theIdx == 0:
+            return None
         c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
                            isinstance(x[0], T.Tree))
         # Need to convert generator -> list to check length
