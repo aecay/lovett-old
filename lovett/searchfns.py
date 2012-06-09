@@ -718,6 +718,43 @@ def sharesLabelWith(fn = identity, all = False):
             return None
     return SearchFunction(_sharesLabelWith)
 
+def sharesLabelWithMod(fn = identity, all = False, transformer = lambda x, y: x == y):
+    """Test whether a node shares a label with another.
+
+    The supplied search function picks out the set of nodes, beginning
+    with the current node, to test for same-label-ness.
+
+    @param f: which nodes to test
+
+    @param all: whether all nodes picked out by C{fn} should match, or
+    (the default) just one
+
+    @param transformer: a two-argument function, called with the label
+    of the anchor node and (sequentially) each target matching C{fn}.
+    Should return C{True} if the labels match, and C{False}
+    otherwise.
+
+    """
+    def _sharesLabelWithMod(t):
+        the_label = t.node
+        candidates = fn(t)
+        if not candidates:
+            return None
+        # TODO: If we mandated that searchfns return lists, then there
+        # would be no need to do this...
+        for c in util.iter_flatten([candidates]):
+            if transformer(the_label, c.node):
+                if not all:
+                    return t
+            else:
+                if all:
+                    return None
+        if all:
+            return t
+        else:
+            return None
+    return SearchFunction(_sharesLabelWithMod)
+
 
 # Function modifiers
 
