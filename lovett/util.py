@@ -71,18 +71,20 @@ def indexOfTree(tree):
             temp = tree[0].split("-")
             ret = 0
             if len(temp) == 2 and temp[-1].isdigit():
-                ret = int(temp[-1])
+                return int(temp[-1])
+            # TODO: how can this ever happen?
             elif len(temp) == 3 and temp[-2].isdigit():
-                ret = int(temp[-2])
-            return ret
+                return int(temp[-2])
+        if "=" in tree.node:
+            temp = tree.node.split("=")
         else:
             temp = tree.node.split("-")
-            ret = 0
-            try:
-                ret = int(temp[-1])
-            except ValueError:
-                pass
-            return ret
+        ret = 0
+        try:
+            ret = int(temp[-1])
+        except ValueError:
+            pass
+        return ret
     except IndexError:
         sys.stderr.write("idxerr, tree is: %s" % tree)
 
