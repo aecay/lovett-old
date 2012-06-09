@@ -570,12 +570,34 @@ def coIndexed(fn = identity):
 
     """
     def _coIndexed(t):
-        theIdx = indexOfTree(t)
-        c = t.root.subtrees(lambda x: indexOfTree(x) == theIdx)
-        filter(lambda x: x != t, c)
-        filter(fn, c)
+        theIdx = util.indexOfTree(t)
+        if theIdx == 0:
+            return None
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and x != t)
+        c = list(c)
+        c = filter(fn, c)
         return c
     return SearchFunction(_coIndexed)
+
+def hasCoIndexed(fn = identity):
+    """Tests if any nodes coindexed with the original node match a
+    predicate.  Returns the original node.
+
+    @param fn: the predicate to test against
+
+    """
+    def _hasCoIndexed(t):
+        theIdx = util.indexOfTree(t)
+        if theIdx == 0:
+            return None
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and x != t)
+        c = list(c)
+        c = filter(fn, c)
+        if c and len(c) > 0:
+            return t
+        else:
+            return None
+    return SearchFunction(_hasCoIndexed)
 
 def antecedent(fn = identity):
     """Tests whether the antecedent of a node matches a predicate, and
