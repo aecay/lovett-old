@@ -527,7 +527,7 @@ def isRoot():
 
     """
     def _isRoot(t):
-        if t.parent == t.root:
+        if t.parent.node == "":
             return t
         else:
             return None
