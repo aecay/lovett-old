@@ -655,6 +655,39 @@ def isTrace():
             return None
     return SearchFunction(_isTrace)
 
+def isGapped():
+    """Tests whether a node is the reduced half of a gapping construction.
+
+    Such nodes can be expected to be structurally deficient in ways not
+    allowed of ordinary nodes.
+
+    """
+    def _isGapped(t):
+        if "=" in t.node:
+            return t
+        else:
+            return None
+    return SearchFunction(_isGapped)
+
+def isIndexed():
+    """Tests whether a node has a numerical index, of any variety."""
+    def _isIndexed(t):
+        if util.isTrace(t):
+            try:
+                int(t[0].split("-")[-1])
+                return t
+            except ValueError:
+                return None
+        else:
+            if isGapped(t):
+                return t
+            else:
+                try:
+                    int(t.node.split("-")[-1])
+                    return t
+                except ValueError:
+                    return None
+
 def sharesLabelWith(fn = identity, all = False):
     """Test whether a node shares a label with another.
 
