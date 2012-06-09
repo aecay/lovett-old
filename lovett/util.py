@@ -112,6 +112,11 @@ def isLeafNode(t):
     else:
         return False
 
+def isTrace(t):
+    return isLeafNode(t) and (t[0][0:3] == "*T*" or
+                              t[0][0:5] == "*ICH*" or
+                              t[0][0:4] == "*CL*")
+
 def iter_flatten(iterable):
     it = iter(iterable)
     for e in it:

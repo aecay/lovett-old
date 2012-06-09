@@ -627,8 +627,7 @@ def hasAntecedent(fn = identity):
 def isTrace():
     """Tests whether a node is a trace."""
     def _isTrace(t):
-        if util.isLeafNode(t) and (t[0][0:3] == "*T*" or
-                                   t[0][0:5] == "*ICH*"):
+        if util.isTrace(t):
             return t
         else:
             return None
