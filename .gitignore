@@ -6,3 +6,4 @@ examples/
 # testing out various documentation options
 doc/
 sphinx-doc/
+/.coverage
