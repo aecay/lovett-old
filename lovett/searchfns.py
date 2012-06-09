@@ -219,7 +219,7 @@ def hasLeafLabel(label):
             return None
     return SearchFunction(_hasLeafLabel)
 
-default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
+# default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
 
 def hasLemma(lemma):
     """Tests if a node has the given lemma.
