@@ -1,6 +1,6 @@
 import nltk.tree as T
 import re
-import util
+import lovett.util as util
 import sys
 
 def public(f):

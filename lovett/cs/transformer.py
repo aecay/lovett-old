@@ -1,5 +1,5 @@
 import nltk.tree as T
-import util
+import lovett.util as util
 
 # TODO: addDashTag
 # TODO: look at conversations w jana for good ideas
