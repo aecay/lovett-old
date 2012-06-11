@@ -3,14 +3,15 @@ import re
 import lovett.util as util
 import sys
 
-def public(f):
-    """Use a decorator to avoid retyping function/class names.
+__docformat__ = "restructuredtext en"
 
-    * Based on an idea by Duncan Booth:
-    http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
-    * Improved via a suggestion by Dave Angel:
-    http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
-    """
+def public(f):
+    # Use a decorator to avoid retyping function/class names.
+
+    # * Based on an idea by Duncan Booth:
+    # http://groups.google.com/group/comp.lang.python/msg/11cbb03e09611b8a
+    # * Improved via a suggestion by Dave Angel:
+    # http://groups.google.com/group/comp.lang.python/msg/3d400fb22d8a42e1
     all = sys.modules[f.__module__].__dict__.setdefault('__all__', [])
     if f.__name__ not in all:  # Prevent duplicates if run from an IDE.
         all.append(f.__name__)
@@ -21,7 +22,7 @@ def public(f):
 @public
 class SearchFunction:
     """This class wraps a function for searching parse trees.  It
-    overrides the (bitwise) C{&}, C{|}, and C{~} operators (and, or, and
+    overrides the (bitwise) ``&``, ``|``, and ``~`` operators (and, or, and
     not respectively) to allow Boolean combinations of search terms.
 
     TODO: calling and return conventions for such a function
@@ -163,13 +164,13 @@ def identity(x):
 def hasLabel(label, exact = False):
     """Tests if a node has a given label.
 
-    @param label: The label to test for.  If a string, the behavior is
-        controlled by the C{exact} argument.  If a regex, then it is
+    :param label: The label to test for.  If a string, the behavior is
+        controlled by the ``exact`` argument.  If a regex, then it is
         matched against the node label of the tree.
 
-    @param exact: Controls how to match a string against a label.
-        C{True} requires C{label} to match exactly the entire label.
-        C{False} (the default) allows C{label} to match a node with
+    :param exact: Controls how to match a string against a label.
+        ``True`` requires ``label`` to match exactly the entire label.
+        ``False`` (the default) allows ``label`` to match a node with
         extra trailing dash tags.
 
     """
@@ -211,7 +212,7 @@ def hasLeafLabel(label):
     This is a low-level function, not intended for use by end users.
     (TODO: don't export it)
 
-    @param label: the text to test against the node's text.  If a
+    :param label: the text to test against the node's text.  If a
         string, it is matched against the node's text exactly, or with
         trailing dash tags removed.
 
@@ -241,7 +242,7 @@ def hasLeafLabel(label):
 def hasLemma(lemma):
     """Tests if a node has the given lemma.
 
-    @param lemma: The lemma to look for.  Can be a regular expression or
+    :param lemma: The lemma to look for.  Can be a regular expression or
         a string (the latter is matched exactly against the lemma).
 
     """
@@ -257,7 +258,7 @@ def hasLemma(lemma):
 def hasWord(word):
     """Tests if a node has the given word (exact text).
 
-    @param word: the text to look for.  Matched rigidly against the
+    :param word: the text to look for.  Matched rigidly against the
         ur-text of the leaf node.  No match if the target node is not a
         leaf.
 
@@ -272,7 +273,7 @@ def hasWord(word):
 def hasDashTag(tag):
     """Tests if the given node has a dash tag.
 
-    @param tag: the dash tag to look for.
+    :param tag: the dash tag to look for.
 
     """
     return hasLabel(re.compile(".*-" + tag + "(-|$)"))
@@ -282,9 +283,9 @@ def hasDaughter(fn = identity):
     """Tests if a node has a daughter matching a predicate.  If so, the
     original node (not the daughter) is returned.  Matching only looks
     at immediate daughters -- to extend further down the tree, see the
-    L{deep} function.
+    `deep` function.
 
-    @param fn: the predicate to test daughters against.
+    :param fn: the predicate to test daughters against.
 
     """
     def _hasDaughter(t):
@@ -301,10 +302,10 @@ def hasDaughter(fn = identity):
 @public
 def daughters(fn = identity):
     """Finds and returns all daughters of a node which match a
-    predicate.  Only looks at immediate daughters -- see L{deep} for
+    predicate.  Only looks at immediate daughters -- see `deep` for
     deep matching.
 
-    @param fn: the predicate to test daughters against.
+    :param fn: the predicate to test daughters against.
 
     """
     def _daughters(t):
@@ -320,7 +321,7 @@ def firstDaughter(fn = identity):
     """Returns the first (left-to-right) daughter of a node which
     matches a predicate, or nothing if no daughters match.
 
-    @param fn: the predicate to test against.
+    :param fn: the predicate to test against.
 
     """
     def _firstDaughter(t):
@@ -355,14 +356,14 @@ def hasSister(fn = identity):
     """Tests if a node has a sister matching a predicate, and returns
     the original node if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     return hasXSister(fn, allSisters)
 
 @public
 def hasLeftSister(fn = identity):
-    """Like L{hasSister}, but only considers sisters to the left of the
+    """Like `hasSister`, but only considers sisters to the left of the
     node.
 
     """
@@ -370,7 +371,7 @@ def hasLeftSister(fn = identity):
 
 @public
 def hasRightSister(fn = identity):
-    """Like L{hasSister}, but only considers sisters to the right of the
+    """Like `hasSister`, but only considers sisters to the right of the
     node.
 
     """
@@ -378,7 +379,7 @@ def hasRightSister(fn = identity):
 
 @public
 def hasImmRightSister(fn = identity):
-    """Like L{hasSister}, but only considers the immediate right sister
+    """Like `hasSister`, but only considers the immediate right sister
     of the original node.
 
     """
@@ -386,7 +387,7 @@ def hasImmRightSister(fn = identity):
 
 @public
 def hasImmLeftSister(fn = identity):
-    """Like L{hasSister}, but only considers the immediate left sister
+    """Like `hasSister`, but only considers the immediate left sister
     of the original node.
 
     """
@@ -408,14 +409,14 @@ def sisters(fn = identity):
     """Tests if a node has any sisters matching a predicate, and returns
     the sister(s) if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     return sistersX(fn, allSisters)
 
 @public
 def leftSisters(fn = identity):
-    """Like L{sisters}, but only considers sisters to the left of the
+    """Like `sisters`, but only considers sisters to the left of the
     node.
 
     """
@@ -423,7 +424,7 @@ def leftSisters(fn = identity):
 
 @public
 def rightSisters(fn = identity):
-    """Like L{sisters}, but only considers sisters to the right of the
+    """Like `sisters`, but only considers sisters to the right of the
     node.
 
     """
@@ -431,7 +432,7 @@ def rightSisters(fn = identity):
 
 @public
 def immLeftSister(fn = identity):
-    """Like L{sisters}, but only considers the immediate left sister
+    """Like `sisters`, but only considers the immediate left sister
     of the original node.
 
     """
@@ -439,7 +440,7 @@ def immLeftSister(fn = identity):
 
 @public
 def immRightSister(fn = identity):
-    """Like L{sisters}, but only considers the immediate right sister
+    """Like `sisters`, but only considers the immediate right sister
     of the original node.
 
     """
@@ -451,7 +452,7 @@ def hasParent(fn = identity):
     """Tests if a node's parent matches a predicate, and returns the
     original node if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _hasParent(t):
@@ -467,7 +468,7 @@ def parent(fn = identity):
     """Tests if a node's parent matches a predicate, and returns the
     parent node if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _parent(t):
@@ -480,7 +481,7 @@ def hasAncestor(fn = identity):
     """Tests if any of a node's ancestors match a predicate, and returns
     the original node if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _hasAncestor(t):
@@ -499,7 +500,7 @@ def ancestor(fn = identity):
     """Tests if any of a node's ancestors match a predicate, and returns
     the first matching ancestor.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _ancestor(t):
@@ -539,7 +540,7 @@ def iPrecedes(fn = identity):
     """Tests if a node immediately precedes (linearly) a node matching a
     predicate, and returns the original node if so.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _iPrecedes(t):
@@ -584,9 +585,9 @@ def isRoot():
 def daughterCount(n, match = "equal"):
     """Tests if the target node has a certain number of daughters.
 
-    @param n: the desired number of daughters
+    :param n: the desired number of daughters
 
-    @param match: controls the behavior of the matching.  One of
+    :param match: controls the behavior of the matching.  One of
         \"equal\", \"less\", or \"greater\".
 
     """
@@ -614,7 +615,7 @@ def coIndexed(fn = identity):
     """Tests if any nodes coindexed with the original node match a
     predicate.  Returns the matching coindexed nodes.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _coIndexed(t):
@@ -632,7 +633,7 @@ def hasCoIndexed(fn = identity):
     """Tests if any nodes coindexed with the original node match a
     predicate.  Returns the original node.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _hasCoIndexed(t):
@@ -655,7 +656,7 @@ def antecedent(fn = identity):
     unique node which is coindexed with that node, and is not itself a
     trace.  If the original node is not a trace, no match is returned.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     # TODO: test whether the target node is a trace
@@ -682,7 +683,7 @@ def hasAntecedent(fn = identity):
     unique node which is coindexed with that node, and is not itself a
     trace.  If the original node is not a trace, no match is returned.
 
-    @param fn: the predicate to test against
+    :param fn: the predicate to test against
 
     """
     def _hasAntecedent(t):
@@ -755,10 +756,10 @@ def sharesLabelWith(fn = identity, all = False):
     The supplied search function picks out the set of nodes, beginning
     with the current node, to test for same-label-ness.
 
-    @param f: which nodes to test
+    :param fn: which nodes to test
 
-    @param all: whether all nodes picked out by C{fn} should match, or
-    (the default) just one
+    :param all: whether all nodes picked out by ``fn`` should match, or
+        (the default) just one
 
     """
     def _sharesLabelWith(t):
@@ -780,21 +781,21 @@ def sharesLabelWith(fn = identity, all = False):
     return SearchFunction(_sharesLabelWith)
 
 @public
-def sharesLabelWithMod(fn = identity, all = False, transformer = lambda x, y: x == y):
+def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x == y)):
     """Test whether a node shares a label with another.
 
     The supplied search function picks out the set of nodes, beginning
     with the current node, to test for same-label-ness.
 
-    @param f: which nodes to test
+    :param fn: which nodes to test
 
-    @param all: whether all nodes picked out by C{fn} should match, or
-    (the default) just one
+    :param all: whether all nodes picked out by ``fn`` should match, or
+        (the default) just one
 
-    @param transformer: a two-argument function, called with the label
-    of the anchor node and (sequentially) each target matching C{fn}.
-    Should return C{True} if the labels match, and C{False}
-    otherwise.
+    :param transformer: a two-argument function, called with the label
+        of the anchor node and (sequentially) each target matching
+        ``fn``.  Should return ``True`` if the labels match, and
+        ``False`` otherwise.
 
     """
     def _sharesLabelWithMod(t):
@@ -842,7 +843,7 @@ def deep(fn):
 
     TODO: usage examples
 
-    @param fn: the predicate to deepen
+    :param fn: the predicate to deepen
 
     """
     def _deep(t):

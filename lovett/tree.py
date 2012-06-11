@@ -1,6 +1,13 @@
 import nltk.tree as T
 
+__docformat__ = "restructuredtext en"
+
 class LovettTree(T.ParentedTree):
+    """A class that wraps a ``nltk.tree.ParentedTree``.
+
+    Currently it does not do much.
+
+    """
     def __unicode__(self, indent = 0):
         if len(self) == 1 and isinstance(self[0], basestring):
             # This is a leaf node

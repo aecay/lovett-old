@@ -1,6 +1,14 @@
 import lovett.tree, lovett.corpus
 
+__docformat__ = "restructuredtext en"
+
 def readTrees(f):
+    """Read trees from a file.
+
+    :param f: the file to read from
+    :type f: file
+
+    """
     current_tree = ""
     comment = False
     all_trees = []
@@ -31,6 +39,12 @@ def readTrees(f):
         return all_trees
 
 def readCorpus(f):
+    """Read a `Corpus` from a file.
+
+    :param f: the file to read from
+    :type f: file
+
+    """
     all_trees = readTrees(f)
     version_tree = all_trees[0]
     version_dict = _parseVersionTree(version_tree)
@@ -41,12 +55,32 @@ def readCorpus(f):
         return lovett.corpus.Corpus(version_dict, all_trees[1:])
 
 def _parseVersionTree(t):
+    """Parse a version tree.
+
+    A version tree must have the form:
+
+    ::
+
+      ( (VERSION (KEY1 val1)
+                 (KEY2 (SUBKEY1 val1))))
+
+    :param t: the version tree to parse
+    :type t: `LovettTree`
+
+    """
     version = t[0]
     if version.node != "VERSION":
         return None
     return _treeToDict(t[0])
 
 def _treeToDict(t):
+    """Convert a `LovettTree` to a dictionary.
+
+    Each key in the dictionary corresponds to a node label from the
+    tree; each value is either a string (leaf node) or another dict
+    (recursive node.)
+
+    """
     if isinstance(t[0], basestring):
         return t[0]
     else:
