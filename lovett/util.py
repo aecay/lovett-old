@@ -1,19 +1,6 @@
 import sys # for debugging only
 import nltk.tree as T
 
-### String representation of trees
-def printTree(tree, indent = 0):
-    if len(tree) == 1 and isinstance(tree[0], str):
-        # This is a leaf node
-        # TODO: python3 compat of isinstance, string formatting
-        return "\n%s(%s %s)" % (" " * indent, tree.node, tree[0])
-    else:
-        s = "%s(%s " % (" " * indent, tree.node)
-        l = len(s)
-        # lstrip is to whack the initial newline+spaces
-        leaves = "".join(map(lambda x: printTree(x, indent + l), tree)).lstrip()
-        return s + leaves + ")"
-
 ### Tree validation
 # TODO: this fn is untested
 def validateIndices(tree):
