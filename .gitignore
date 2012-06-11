@@ -4,7 +4,11 @@
 examples/
 
 # testing out various documentation options
-doc/
+docs/
 sphinx-doc/
 /.coverage
 htmlcov/
+
+# distribution-related things
+MANIFEST
+dist/
