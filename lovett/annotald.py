@@ -1,5 +1,5 @@
 import sys
-import transformer as TT
+import lovett.cs.transformer as TT
 import nltk.tree as T
 import subprocess
 
