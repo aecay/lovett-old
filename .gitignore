@@ -7,3 +7,4 @@ examples/
 doc/
 sphinx-doc/
 /.coverage
+htmlcov/
