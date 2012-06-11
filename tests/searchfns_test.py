@@ -1,6 +1,6 @@
 import unittest
-import lovett.transformer
-from lovett.searchfns import *
+from lovett.cs.transformer import TreeTransformer
+from lovett.cs.searchfns import *
 import nltk.tree as T
 
 def leaf(label, word):
@@ -8,20 +8,19 @@ def leaf(label, word):
 
 PT = T.ParentedTree
 
-class TestTransformer(unittest.TestCase):
+class TestSearchFns(unittest.TestCase):
     def setUp(self):
         self.t = T.ParentedTree("""
                                 ( (IP (ADVP (Q very) (ADV slowly)) (, ,)
                                 (NP-SBJ (NPR John))
                                 (V eats)
                                 (NP-OB1 (D the) (ADJ tasty) (N apple))))""")
-        self.tt = lovett.transformer.TreeTransformer(self.t)
+        self.tt = TreeTransformer(self.t)
 
     # TODO: test optional args, proper matching of dash labels, regex, etc.
-        def test_hasLabel(self):
-            self.tt.findNodes(hasLabel("N"))
-            self.assertEqual(self.tt.matches(), [leaf("N", "foo"),
-                                                 leaf("N", "quux")])
+    def test_hasLabel(self):
+        self.tt.findNodes(hasLabel("N"))
+        self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
             
     def test_hasDaughter(self):
         self.tt.findNodes(hasDaughter(hasLabel("V")))
