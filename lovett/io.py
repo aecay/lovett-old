@@ -1,18 +1,14 @@
 import lovett.tree, lovett.corpus
 
+import sys
+import multiprocessing
+
 __docformat__ = "restructuredtext en"
 
-def readTrees(f):
-    """Read trees from a file.
-
-    :param f: the file to read from
-    :type f: file
-
-    """
-    current_tree = ""
+def _stripComments(lines):
+    r = []
     comment = False
-    all_trees = []
-    for l in f.readlines():
+    for l in lines:
         if l.startswith("/*") or l.startswith("/~*"):
             # This begins a CorpusSearch comment
             comment = True
@@ -24,28 +20,40 @@ def readTrees(f):
         elif comment:
             # Already in a comment, discard the line
             pass
-        elif l.strip() == "":
-            # Found a blank line, the tree separator
-            if current_tree.strip() != "":
-                all_trees.append(lovett.tree.LovettTree(current_tree))
-                current_tree = ""
         else:
-            current_tree = current_tree + l
+            r.append(l)
     if comment:
-        # We should not reach the end of the file in a comment
-        raise Exception(
-            "End of file reached while in comment; possibly corrupt file!")
-    else:
-        return all_trees
+        raise Exception("unblaanced comment")
+    return r
 
-def readCorpus(f):
+def readTrees(f, stripComments = False):
+    """Read trees from a file.
+
+    :param f: the file to read from
+    :type f: file
+
+    """
+    current_tree = ""
+    comment = False
+    all_trees = []
+    lines = f.readlines()
+    if stripComments:
+        lines = _stripComments(lines)
+    trees = "".join(lines).split("\n\n")
+    trees = map(lambda s: s.strip(), trees)
+    trees = filter(lambda s: s != "", trees)
+    trees = map(lovett.tree.LovettTree, trees)
+    return trees
+
+# TODO: move to Corpus class?
+def readCorpus(f, stripComments = True):
     """Read a `Corpus` from a file.
 
     :param f: the file to read from
     :type f: file
 
     """
-    all_trees = readTrees(f)
+    all_trees = readTrees(f, stripComments)
     version_tree = all_trees[0]
     version_dict = _parseVersionTree(version_tree)
     if version_dict is None:

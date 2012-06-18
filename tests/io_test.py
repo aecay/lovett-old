@@ -67,7 +67,7 @@ class IOTest(unittest.TestCase):
                                               
                                               <+ yay +>
                                               """).strip())
-        self.assertEqual(lovett.io.readTrees(f),
+        self.assertEqual(lovett.io.readTrees(f, stripComments = True),
                          [LovettTree("(IP (NP Foos) (V bar))"),
                           LovettTree("(IP (NP Bazes) (V quux))")])
 
@@ -94,7 +94,7 @@ class IOTest(unittest.TestCase):
                                               
                                               <+ yay +>
                                               """).strip())
-        c = lovett.io.readCorpus(f)
+        c = lovett.io.readCorpus(f, stripComments = True)
         self.assertEqual(c.metadata, { "FORMAT" : "dash" })
         self.assertEqual(c.trees,
                          [LovettTree("(IP (NP Foos) (V bar))"),
