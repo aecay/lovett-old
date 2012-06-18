@@ -57,4 +57,17 @@ class LovettTree(nltk.tree.ParentedTree):
 
     def __str__(self, indent = 0):
         return str(self.__unicode__(indent))
-        
+
+    # def subtrees(self, filter=None):
+    #     """Overridden version from ``nltk.tree.Tree``.  Uses ``hasattr``
+    #     instead of ``isinstance`` for speed.
+
+    #     TODO: is this actually slower?
+
+    #     """
+    #     if not filter or filter(self):
+    #         yield self
+    #     for child in self:
+    #         if hasattr(child, "node"):
+    #             for subtree in child.subtrees(filter):
+    #                 yield subtree
