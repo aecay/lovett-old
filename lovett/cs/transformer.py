@@ -17,6 +17,10 @@ class TreeTransformer:
         return fn(self._tree[p])
 
     # TODO: add shortcut to call with just a string -> hasLabel
+
+    # TODO: add depth argument to allow restricting the depth of
+    # searches and/or add "findFromRoot" which only calls the predicate
+    # with the root node
     def findNodes(self, fn = lambda x: x):
         self._matches = []
         for p in self._tree.subtrees():
