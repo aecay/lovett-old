@@ -5,12 +5,11 @@ import textwrap
 from lovett.tree import LovettTree
 from lovett.corpus import Corpus
 import lovett.io
-from lovett.io import _treeToDict, _parseVersionTree
 
 class IOTest(unittest.TestCase):
     def test_treeToDict(self):
         t = LovettTree("((FOO bar) (BAZ (QUUX 1) (BLORFLE 2)))")
-        self.assertEqual(_treeToDict(t),
+        self.assertEqual(lovett.io._treeToDict(t),
                          { "FOO" : "bar",
                            "BAZ" : { "QUUX" : "1",
                                      "BLORFLE" : "2"}})
@@ -20,11 +19,11 @@ class IOTest(unittest.TestCase):
                                    ( (VERSION (FORMAT dash)
                                               (SOMETHING else)))
                                    """)
-        self.assertEqual(_parseVersionTree(t),
+        self.assertEqual(lovett.io._parseVersionTree(t),
                          { "FORMAT" : "dash",
                            "SOMETHING" : "else" })
         t = lovett.tree.LovettTree("((FOO bar) (BAZ (QUUX 1) (BLORFLE 2)))")
-        self.assertIsNone(_parseVersionTree(t))
+        self.assertIsNone(lovett.io._parseVersionTree(t))
 
 
     def test_readTrees(self):
