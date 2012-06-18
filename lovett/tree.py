@@ -1,8 +1,9 @@
-import nltk.tree as T
+import nltk.tree
 
 __docformat__ = "restructuredtext en"
 
-class LovettTree(T.ParentedTree):
+
+class LovettTree(nltk.tree.ParentedTree):
     """A class that wraps a ``nltk.tree.ParentedTree``.
 
     Currently it does not do much.
