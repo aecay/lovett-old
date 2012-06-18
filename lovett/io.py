@@ -85,3 +85,27 @@ def _treeToDict(t):
         return t[0]
     else:
         return dict([(n.node, _treeToDict(n)) for n in t])
+
+def _dictToMetadata(d):
+    return lovett.tree.LovettTree("METADATA", _dictToTrees(d))
+
+
+def _dictToTrees(d):
+    if isinstance(d, basestring):
+        return [d]
+    r = []
+    for k in d:
+        r.append(lovett.tree.LovettTree(k, _dictToTrees(d[k])))
+    return r
+
+def writeTrees(metadata, trees, file):
+    """Write trees to file.
+
+    :param metadata: the metadata for these trees, or ``None``
+    :param trees: a list of trees
+    :param file: the file to write to
+
+    """
+    if metadata:
+        file.write(_dictToMetadata(metadata) + "\n\n")
+    file.write("\n\n".join(trees))

@@ -25,6 +25,25 @@ class IOTest(unittest.TestCase):
         t = lovett.tree.LovettTree("((FOO bar) (BAZ (QUUX 1) (BLORFLE 2)))")
         self.assertIsNone(lovett.io._parseVersionTree(t))
 
+    def test_dictToTrees(self):
+        d = { 'foo' : 'bar',
+              'baz' : { '1' : 'one',
+                        '2' : 'two' } }
+        self.assertEqual(lovett.io._dictToTrees(d),
+                         [LovettTree("foo", ["bar"]),
+                          LovettTree("baz", [LovettTree("1", ["one"]),
+                                             LovettTree("2", ["two"])])])
+
+    def test_dictToMetadata(self):
+        d = { 'foo' : 'bar',
+              'baz' : { '1' : 'one',
+                        '2' : 'two' } }
+        self.assertEqual(lovett.io._dictToMetadata(d),
+                         LovettTree("METADATA", [LovettTree("foo", ["bar"]),
+                                                 LovettTree("baz",
+                                                            [LovettTree("1", ["one"]),
+                                                             LovettTree("2", ["two"])])]))
+
 
     def test_readTrees(self):
         f = StringIO.StringIO(textwrap.dedent("""
