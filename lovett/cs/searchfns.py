@@ -160,6 +160,7 @@ def identity(x):
 # parent) for words.
 
 # TODO: handle ignore
+# TODO: NP=2 should give hasLabel("NP") -> True
 @public
 def hasLabel(label, exact = False):
     """Tests if a node has a given label.
