@@ -30,6 +30,9 @@ class TreeTransformer:
                 self._matches.extend(list(util.iter_flatten([res])))
         return self
 
+    def storeMatchData(self, fn):
+        self._matchData = map(fn, self._matches)
+
     # Should we remove this?  It is probably never necessary, except for
     # convenience, and it makes things complicated (can filter turn a
     # single match into a list?)  Update: Don't remove -- in tree
@@ -37,11 +40,14 @@ class TreeTransformer:
     # better name
     def filterMatches(self, fn = lambda x: x):
         new_matches = []
-        for m in self._matches:
-            res = fn(m)
+        new_match_data = []
+        for m in range(len(self._matches)):
+            res = fn(self._matches[m])
             if res:
-                new_matches = list(util.iter_flatten([res]))
+                new_matches += list(util.iter_flatten([res]))
+                new_match_data += [self._matchData[m]] * len(res)
         self._matches = new_matches
+        self._matchData = new_match_data
         return self
 
     # TODO: make sure that the modification functions are updateing
@@ -97,7 +103,7 @@ class TreeTransformer:
                         break
                 else:
                     break
-            
+
         return self
 
     # Instead of immediate -- another function extendOne?
@@ -170,6 +176,12 @@ class TreeTransformer:
                 del self._tree[d.treepos]
                 p.insert(pi, d)
             del self._tree[m.treepos]
+
+    def withMatchAndData(self, fn):
+        # TODO: convert all other convenience fns to special cases of this one
+        # TODO: extend notion of match to allow multiples
+        for i in range(len(self._matches)):
+            self._matches[i] = fn(self._matches[i], self._matchData[i])
 
     # TODO: raiseNode
 
