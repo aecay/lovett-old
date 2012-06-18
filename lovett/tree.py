@@ -2,6 +2,40 @@ import nltk.tree
 
 __docformat__ = "restructuredtext en"
 
+def nextToken(s):
+    s = s.lstrip()
+    if s == "":
+        raise Exception("ran out of input")
+    if s[0] in "()":
+        return s[0], s[1:]
+    else:
+        i = 1
+        while s[i] not in " )\n\t":
+            i += 1
+        return s[0:i], s[i:]
+
+def parseTree(s):
+    stack = []
+    while True:
+        t, s = nextToken(s)
+        if t == "(":
+            n, s = nextToken(s)
+            if n == "(":
+                s = n + s
+                n = ""
+            stack.append(LovettTree(n, []))
+        elif t == ")":
+            p = stack.pop()
+            if len(stack) == 0:
+                if s.strip() == "":
+                    return p
+                else:
+                    raise Exception("extra input: %s" % s)
+            stack[-1].append(p)
+        else:
+            stack[-1].append(t)
+
+
 
 class LovettTree(nltk.tree.ParentedTree):
     """A class that wraps a ``nltk.tree.ParentedTree``.
