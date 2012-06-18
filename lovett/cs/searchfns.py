@@ -850,18 +850,9 @@ def deep(fn):
         # TODO: We have null handling here is because we don't go
         # through SearchFunction again.  Should we?
         if t:
-            # The code elves gave me this.  Deep returns a list.
-            # Daughters also returns a list, so we get nested lists.
-            # The reduce un-nests them.
-            ds = daughters(deep(fn))(t)
-            if ds:
-                ds = reduce(reduceHack, [l for l in daughters(deep(fn))(t) \
-                                             if hasattr(l, "__iter__")])
-            res = [fn(t)]
-            if isinstance(ds, list):
-                res.extend(ds)
-            ret = [r for r in res if r]
-            return ret
+            ret = t.subtrees()
+            ret = map(fn, ret)
+            return filter(identity, util.iter_flatten(ret))
         else:
             return t
     return SearchFunction(_deep)
