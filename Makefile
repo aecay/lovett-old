@@ -4,7 +4,7 @@ default: test
 
 test:
 	nosetests2 --with-coverage --cover-package=lovett
-	coverage html
+	coverage2 html
 
 doc:
 	epydoc --html -v -o docs lovett/
