@@ -68,15 +68,13 @@ class SearchFunction:
         return SearchFunction(_or)
 
     def __invert__(self):
-        def _close(fn):
-            def _not(t):
-                if fn(t):
-                    return None
-                else:
-                    return t
+        def _not(t):
+            if self(t):
+                return None
+            else:
+                return t
             return _not
-        self.fn = _close(self.fn)
-        return self
+        return SearchFunction(_not)
 
 
 # TODO: add below methods to (subclass of) ParentedTree?
