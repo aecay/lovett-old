@@ -1,5 +1,5 @@
 import sys
-import nltk.tree
+import tree
 import hashlib
 
 def isEmpty(tuple):

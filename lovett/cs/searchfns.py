@@ -1,4 +1,4 @@
-import nltk.tree as T
+import lovett.tree as T
 import re
 import lovett.util as util
 import sys

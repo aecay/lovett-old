@@ -1,4 +1,4 @@
-import nltk.tree as T
+import lovett.tree as T
 import lovett.util as util
 
 # TODO: addDashTag
