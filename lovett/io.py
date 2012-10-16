@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import lovett.tree, lovett.corpus
 
 import sys

@@ -1,7 +1,7 @@
 import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
-import nltk.tree as T
+import lovett.tree as T
 
 def leaf(label, word):
     return T.ParentedTree(label, [word])
@@ -21,7 +21,7 @@ class TestSearchFns(unittest.TestCase):
     def test_hasLabel(self):
         self.tt.findNodes(hasLabel("N"))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
-            
+
     def test_hasDaughter(self):
         self.tt.findNodes(hasDaughter(hasLabel("V")))
         self.assertEqual(self.tt.matches(), [self.t[0]])

@@ -1,5 +1,6 @@
 import lovett.io
 import multiprocessing
+import codecs
 
 __docformat__ = "restructuredtext en"
 
@@ -32,7 +33,7 @@ class Corpus:
 
         """
         if isinstance(file_or_name, basestring):
-            file_or_name = open(file_or_name, "w")
+            file_or_name = codecs.open(file_or_name, "w", "utf-8")
         lovett.io.writeTrees(self.metadata, self.trees, file_or_name)
 
 

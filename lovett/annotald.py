@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import sys
 import lovett.cs.transformer as TT
 import nltk.tree as T
