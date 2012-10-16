@@ -3,10 +3,10 @@ import tree
 import hashlib
 
 def isEmpty(tuple):
-    if tuple[0] == "CODE":
+    if tuple[1] == "CODE":
         return True
-    elif tuple[1][0] == "*" or \
-            (tuple[1] == "0" and tuple[0] != "NUM"):
+    elif tuple[0][0] == "*" or \
+            (tuple[0] == "0" and tuple[1] != "NUM"):
         return True
     return False
 
