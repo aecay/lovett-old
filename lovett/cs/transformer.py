@@ -44,6 +44,9 @@ class TreeTransformer:
         for m in range(len(self._matches)):
             res = fn(self._matches[m])
             if res:
+                # TODO: make eatch match be an object, with metadata
+                # dict.  then map \x -> ObjWMD(x, old_md) over the list
+                # of results here
                 new_matches += list(util.iter_flatten([res]))
                 new_match_data += [self._matchData[m]] * len(res)
         self._matches = new_matches
