@@ -3,6 +3,7 @@ import tree
 import hashlib
 
 def isEmpty(tuple):
+    # TODO: use accessor functions (namedtuple?) instead of magic indices.
     if tuple[1] == "CODE":
         return True
     elif tuple[0][0] == "*" or \
