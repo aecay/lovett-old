@@ -25,7 +25,7 @@ def _stripComments(lines):
         else:
             r.append(l)
     if comment:
-        raise Exception("unblaanced comment")
+        raise Exception("unbalanced comment")
     return r
 
 def readTrees(f, stripComments = False):
@@ -109,6 +109,7 @@ def _dictToTrees(d):
     return r
 
 def writeTrees(metadata, trees, file):
+    # TODO: if trees are nltk trees (not strings), this barfs
     """Write trees to file.
 
     :param metadata: the metadata for these trees, or ``None``
