@@ -1,5 +1,7 @@
 import sys # for debugging only
-import tree as T
+import lovett.tree
+
+from functools import reduce
 
 ### Tree validation
 # TODO: this fn is untested
@@ -35,7 +37,7 @@ def getLargestIndex(tree):
 def addIndexToTree(index, tree):
     # TODO: do dash-tags go inside or outside index?
     try:
-        if isinstance(tree[0], basestring) and tree[0][0] == "*":
+        if isinstance(tree[0], str) and tree[0][0] == "*":
             # This is an EC; so add index to the leaf
             temp = tree[0].split("-")
             # This is a bogus test for the presence of a lemma, in general.  But
@@ -53,7 +55,7 @@ def addIndexToTree(index, tree):
 
 def indexOfTree(tree):
     try:
-        if isinstance(tree[0], basestring) and tree[0][0] == "*":
+        if isinstance(tree[0], str) and tree[0][0] == "*":
             # This is an EC
             temp = tree[0].split("-")
             ret = 0
@@ -78,7 +80,7 @@ def indexOfTree(tree):
 
 def removeIndexFromTree(tree):
     old_index = indexOfTree(tree)
-    if isinstance(tree[0], basestring) and tree[0][0] == "*":
+    if isinstance(tree[0], str) and tree[0][0] == "*":
         # This is an EC
         temp = tree[0].split("-")
         if len(temp) == 2 and temp[-1].isdigit():
@@ -96,7 +98,7 @@ def removeIndexFromTree(tree):
 
 
 def isLeafNode(t):
-    if not isinstance(t[0], T.Tree):
+    if not isinstance(t[0], lovett.tree.Tree):
         return True
     else:
         return False
@@ -109,7 +111,7 @@ def isTrace(t):
 def iter_flatten(iterable):
     it = iter(iterable)
     for e in it:
-        if isinstance(e, (list, tuple)) and not isinstance(e, T.Tree):
+        if isinstance(e, (list, tuple)) and not isinstance(e, lovett.tree.Tree):
             for f in iter_flatten(e):
                 yield f
         else:
@@ -173,3 +175,78 @@ def slice_bounds(sequence, slice_obj, allow_step=False):
 
     # That's all folks!
     return start, stop
+
+def _parseVersionTree(t):
+    """Parse a version tree.
+
+    A version tree must have the form:
+
+    ::
+
+      ( (VERSION (KEY1 val1)
+                 (KEY2 (SUBKEY1 val1))))
+
+    :param t: the version tree to parse
+    :type t: `LovettTree`
+
+    """
+    version = t[0]
+    if version.node != "VERSION":
+        return None
+    return _treeToDict(t[0])
+
+def _treeToDict(t):
+    """Convert a `LovettTree` to a dictionary.
+
+    Each key in the dictionary corresponds to a node label from the
+    tree; each value is either a string (leaf node) or another dict
+    (recursive node.)
+
+    """
+    if isinstance(t[0], str):
+        return t[0]
+    else:
+        return dict([(n.node, _treeToDict(n)) for n in t])
+
+def _dictToMetadata(d):
+    if not d:
+        return None
+    return lovett.tree.LovettTree("METADATA", _dictToTrees(d))
+
+
+def _dictToTrees(d):
+    if isinstance(d, str):
+        return [d]
+    r = []
+    for k in d:
+        r.append(lovett.tree.LovettTree(k, _dictToTrees(d[k])))
+        return r
+
+UNIFY_VERSION_IGNORE_KEYS = ["HASH"]
+
+def _unifyVersionTrees(old, new):
+    for k in new.keys():
+        if k in UNIFY_VERSION_IGNORE_KEYS:
+            continue
+        if k in old:
+            if old[k] == new[k]:
+                pass
+            else:
+                raise Exception("Mismatched version info")
+        else:
+            old[k] = new[k]
+    return old
+
+def metadata_str(dic, name, indent):
+    r ="(" + name + " "
+    l = len(r)
+    def helper(d, k):
+        if isinstance(d[k], str):
+            return "(" + k + " " + d[k] + ")"
+        else:
+            return metadata_str(d[k], k, indent + l)
+    r += ("\n" + " " * (indent + l)).join(
+        helper(dic, key) for key in sorted(dic.keys())
+    )
+    r += ")"
+    return r
