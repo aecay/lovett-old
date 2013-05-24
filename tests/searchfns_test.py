@@ -1,6 +1,7 @@
 import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
+import lovett.cs.searchfns
 import lovett.tree as T
 
 def leaf(label, word):
@@ -71,3 +72,25 @@ class TestSearchFns(unittest.TestCase):
 
 
     # TODO: test hasLemma, other fns
+
+    def test_str(self):
+        def is_search_fn(x):
+            if hasattr(x, "__call__"):
+                try:
+                    return isinstance(x("foo"), SearchFunction)
+                except:
+                    return False
+        search_fns = set(map(lambda x: x.__name__, filter(is_search_fn, lovett.cs.searchfns.__dict__.values())))
+        search_fns.remove("setIgnore")
+        # TODO: test these
+        search_fns.remove("sharesLabelWithMod")
+        search_fns.remove("daughterCount")
+        search_fns.remove("sharesLabelWith")
+        # Remove unexported functions
+        search_fns = search_fns.intersection(set(locals().keys()))
+
+        for sf in search_fns:
+            print (sf)
+            s = "%s('foo')" % sf
+            i = eval(s)
+            self.assertEqual(s, str(i))

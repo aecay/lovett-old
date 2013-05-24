@@ -2,6 +2,8 @@ import lovett.tree as T
 import re
 import lovett.util as util
 import sys
+import inspect
+import random
 
 from functools import reduce
 
@@ -30,8 +32,11 @@ class SearchFunction:
     TODO: calling and return conventions for such a function
 
     """
-    def __init__(self, fn):
+    def __init__(self, fn, arg = ""):
         self.fn = fn
+        fn_str = fn.__name__[1:]
+        self.fn_str = fn_str
+        self.arg = arg
 
     # is this the place to put the ignore logic?
     def __call__(self, arg):
@@ -59,7 +64,7 @@ class SearchFunction:
                 return res
             else:
                 return other(t)
-        return SearchFunction(_and)
+        return SearchFunction(_and, "%s & %s" % (str(self), str(other)))
 
     def __or__(self, other):
         def _or(t):
@@ -68,7 +73,7 @@ class SearchFunction:
                 return res
             else:
                 return other(t)
-        return SearchFunction(_or)
+        return SearchFunction(_or, "%s | %s" % (str(self), str(other)))
 
     def __invert__(self):
         def _not(t):
@@ -77,17 +82,20 @@ class SearchFunction:
             else:
                 return t
             return _not
-        return SearchFunction(_not)
+        return SearchFunction(_not, "~%s" % str(self))
 
+    def __str__(self):
+        return "%s(%s)" % (self.fn_str, _get_arg_string(self.arg))
 
 # TODO: add below methods to (subclass of) ParentedTree?
 
 # Ignoring things
-ignore_function = SearchFunction(lambda x: False)
+ignore_function = SearchFunction(lambda x: False, "")
 # Because of mutual recursion with this and hasLabel, the actual value
 # is filled in below
 default_ignore_function = lambda x: False
 
+# TODO: not working yet
 def setIgnore(fn):
     global ignore_function
     old_ignore = ignore_function
@@ -99,6 +107,14 @@ def shouldIgnore(t):
 
 # Access functions
 
+# This translated from the access function names to search fn names, below
+sister_fn_map = {
+    'allLeftSisters'  : 'leftSister',
+    'allRightSisters' : 'rightSister',
+    'nextLeftSister'  : 'immLeftSister',
+    'nextRightSister' : 'immRightSister',
+    'allSisters'      : 'sister'
+}
 def allLeftSisters(t):
     res = []
     while t:
@@ -142,8 +158,29 @@ def allDaughters(t):
 
 # Something which is dumb: not having an identity function in your
 # standard library.
-def identity(x):
-    return x
+class Identity(object):
+    # This must be a class, in order to have a __str__ method
+    def __call__(self, arg):
+        return arg
+    def __str__(self):
+        # TODO: this isn't idempotent, and doesn't play well with
+        # multiprocessing
+        return "lambda x: x"
+
+identity = Identity()
+
+def _get_arg_string(x):
+    if isinstance(x, type(re.compile(""))):
+        return "re.compile(%s)" % x.pattern
+    if isinstance(x, StartsWith):
+        return "StartsWith(%s)" % x
+    if isinstance(x, type(lambda: None)):
+        try:
+            return inspect.getsourcelines(x)
+        except OSError:
+            # TODO: this is really crappy
+            return "<function %s>" % random.random()
+    return "'" + str(x) + "'"
 
 # Search functions
 
@@ -201,7 +238,7 @@ def hasLabel(label, exact = False):
                     return t
                 else:
                     return None
-    return SearchFunction(_hasLabel)
+    return SearchFunction(_hasLabel, label)
 
 class StartsWith:
     def __init__(self, string):
@@ -247,7 +284,9 @@ def hasLeafLabel(label):
                         return None
         else:
             return None
-    return SearchFunction(_hasLeafLabel)
+    r = SearchFunction(_hasLeafLabel, label)
+    r.fn_str = "hasLeafLabel"
+    return r
 
 # default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
 @public
@@ -262,7 +301,10 @@ def hasLemma(lemma):
         lemma = lemma.pattern
     else:
         lemma = re.escape(lemma)
-    return hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
+    r = hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
+    r.fn_str = "hasLemma"
+    r.arg = lemma
+    return r
 
 # TODO: make aware of different formats (deep, dash)
 # is this redundant with hasLeafLabel?  Should this be called hasText?
@@ -279,7 +321,10 @@ def hasWord(word):
         word = word.pattern
     else:
         word = re.escape(word)
-    return hasLeafLabel(re.compile("^(" + word + ")-"))
+    r = hasLeafLabel(re.compile("^(" + word + ")-"))
+    r.fn_str = "hasWord"
+    r.arg = word
+    return r
 
 @public
 def hasDashTag(tag):
@@ -288,7 +333,9 @@ def hasDashTag(tag):
     :param tag: the dash tag to look for.
 
     """
-    return hasLabel(re.compile(".*-" + tag + "(-|$)"))
+    r = hasLabel(re.compile(".*-" + tag + "(-|$)"))
+    r.fn_str = "hasDashTag"
+    r.arg = tag
 
 @public
 def hasDaughter(fn = identity):
@@ -309,7 +356,7 @@ def hasDaughter(fn = identity):
                 return t
             else:
                 return None
-    return SearchFunction(_hasDaughter)
+    return SearchFunction(_hasDaughter, fn)
 
 @public
 def daughters(fn = identity):
@@ -326,7 +373,7 @@ def daughters(fn = identity):
         else:
             vals = [fn(d) for d in allDaughters(t)]
             return [v for v in vals if v]
-    return SearchFunction(_daughters)
+    return SearchFunction(_daughters, fn)
 
 @public
 def firstDaughter(fn = identity):
@@ -344,7 +391,7 @@ def firstDaughter(fn = identity):
                 if fn(st):
                     return st
             return None
-    return SearchFunction(_firstDaughter)
+    return SearchFunction(_firstDaughter, fn)
 
 def hasXSister(fn = identity, sisterFn = allSisters):
     """Internal function.
@@ -361,7 +408,10 @@ def hasXSister(fn = identity, sisterFn = allSisters):
                 return None
         else:
            return None
-    return SearchFunction(_hasXSister)
+    r = SearchFunction(_hasXSister, fn)
+    s = sister_fn_map[sisterFn.__name__]
+    r.fn_str = "has" + s[0].upper() + s[1:]
+    return r
 
 @public
 def hasSister(fn = identity):
@@ -414,7 +464,12 @@ def sistersX(fn = identity, sisterFn = allSisters):
     def _sisters(t):
         vals = [fn(s) for s in sisterFn(t)]
         return [v for v in vals if v]
-    return SearchFunction(_sisters)
+    r = SearchFunction(_sisters, fn)
+    s = sister_fn_map[sisterFn.__name__]
+    if not s.startswith("imm"):
+        s +=  "s"
+    r.fn_str = s
+    return r
 
 @public
 def sisters(fn = identity):
@@ -473,7 +528,7 @@ def hasParent(fn = identity):
             return t
         else:
             return None
-    return SearchFunction(_hasParent)
+    return SearchFunction(_hasParent, fn)
 
 @public
 def parent(fn = identity):
@@ -486,7 +541,7 @@ def parent(fn = identity):
     def _parent(t):
         p = t.parent
         return fn(p)
-    return SearchFunction(_parent)
+    return SearchFunction(_parent, fn)
 
 @public
 def hasAncestor(fn = identity):
@@ -505,7 +560,7 @@ def hasAncestor(fn = identity):
                 return None
         else:
             return None
-    return SearchFunction(_hasAncestor)
+    return SearchFunction(_hasAncestor, fn)
 
 @public
 def ancestor(fn = identity):
@@ -527,7 +582,7 @@ def ancestor(fn = identity):
                 return _ancestor(p)
         else:
             return None
-    return SearchFunction(_ancestor)
+    return SearchFunction(_ancestor, fn)
 
 def leftEdge(fn = identity):
     """Internal function.
@@ -545,7 +600,7 @@ def leftEdge(fn = identity):
             return leftEdge(fn)(down_left)
         else:
             return None
-    return SearchFunction(_leftEdge)
+    return SearchFunction(_leftEdge, fn)
 
 @public
 def iPrecedes(fn = identity):
@@ -566,7 +621,7 @@ def iPrecedes(fn = identity):
                     return t
             this_node = this_node.parent
         return None
-    return SearchFunction(_iPrecedes)
+    return SearchFunction(_iPrecedes, fn)
 
 # TODO: don't count traces etc as leaves?  and word-level conjunction
 @public
@@ -577,7 +632,7 @@ def isLeaf():
             return t
         else:
             return None
-    return SearchFunction(_isLeaf)
+    return SearchFunction(_isLeaf, fn)
 
 @public
 def isRoot():
@@ -591,7 +646,7 @@ def isRoot():
             return t
         else:
             return None
-    return SearchFunction(_isRoot)
+    return SearchFunction(_isRoot, fn)
 
 @public
 def daughterCount(n, match = "equal"):
@@ -620,7 +675,7 @@ def daughterCount(n, match = "equal"):
             return t
         else:
             return None
-    return SearchFunction(_daughterCount)
+    return SearchFunction(_daughterCount, "%s, match='%s'" % (n, match))
 
 @public
 def coIndexed(fn = identity):
@@ -638,7 +693,7 @@ def coIndexed(fn = identity):
         c = list(c)
         c = filter(fn, c)
         return c
-    return SearchFunction(_coIndexed)
+    return SearchFunction(_coIndexed, fn)
 
 @public
 def hasCoIndexed(fn = identity):
@@ -659,7 +714,7 @@ def hasCoIndexed(fn = identity):
             return t
         else:
             return None
-    return SearchFunction(_hasCoIndexed)
+    return SearchFunction(_hasCoIndexed, fn)
 
 @public
 def antecedent(fn = identity):
@@ -686,7 +741,7 @@ def antecedent(fn = identity):
                 return None
         else:
             return None
-    return SearchFunction(_antecedent)
+    return SearchFunction(_antecedent, fn)
 
 @public
 def hasAntecedent(fn = identity):
@@ -713,7 +768,7 @@ def hasAntecedent(fn = identity):
                 return None
         else:
             return None
-    return SearchFunction(_hasAntecedent)
+    return SearchFunction(_hasAntecedent, fn)
 
 @public
 def isTrace():
@@ -723,7 +778,7 @@ def isTrace():
             return t
         else:
             return None
-    return SearchFunction(_isTrace)
+    return SearchFunction(_isTrace, "")
 
 @public
 def isGapped():
@@ -738,7 +793,7 @@ def isGapped():
             return t
         else:
             return None
-    return SearchFunction(_isGapped)
+    return SearchFunction(_isGapped, "")
 
 @public
 def isIndexed():
@@ -759,7 +814,7 @@ def isIndexed():
                     return t
                 except ValueError:
                     return None
-    return SearchFunction(_isIndexed)
+    return SearchFunction(_isIndexed, "")
 
 @public
 def sharesLabelWith(fn = identity, all = False):
@@ -790,7 +845,7 @@ def sharesLabelWith(fn = identity, all = False):
             return t
         else:
             return None
-    return SearchFunction(_sharesLabelWith)
+    return SearchFunction(_sharesLabelWith, "%s, all='%s'" % (fn, all))
 
 @public
 def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x == y)):
@@ -828,7 +883,8 @@ def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x
             return t
         else:
             return None
-    return SearchFunction(_sharesLabelWithMod)
+    return SearchFunction(_sharesLabelWithMod, '%s, all="%s", transformer = "%s"' %
+                          (fn, all, transformer))
 
 
 # Function modifiers
@@ -869,7 +925,7 @@ def deep(fn):
             return list(x for x in util.iter_flatten(ret) if x)
         else:
             return t
-    return SearchFunction(_deep)
+    return SearchFunction(_deep, fn)
 
 @public
 def ignoring(ignore_fn, fn):
@@ -879,7 +935,7 @@ def ignoring(ignore_fn, fn):
         res = fn(t)
         setIgnore(old_ignore)
         return res
-    return SearchFunction(_ignoring)
+    return SearchFunction(_ignoring, 'ignore_fn="%s", fn="%s"' % (ignore_fn, fn))
 
 # Utility functions
 
