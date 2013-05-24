@@ -10,7 +10,7 @@ def flagIf(expr):
         trees = trees.split("\n\n")
         results = []
         for tree in trees:
-            trans = TT.TreeTransformer(T.ParentedTree(tree))
+            trans = TT.TreeTransformer(T.ParentedTree.parse(tree))
             trans.findNodes(expr)
             trans.changeLabel(lambda x: x + "-FLAG")
             results.append(trans.pt())
