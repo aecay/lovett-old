@@ -28,7 +28,12 @@ def _stripComments(lines):
         raise Exception("unbalanced comment")
     return r
 
-def readTrees(f, stripComments = False):
+def strip(s):
+    return s.strip()
+def parse(s):
+    return lovett.tree.LovettTree.parse(s)
+
+def readTrees(f, stripComments = False, parallel = True):
     """Read trees from a file.
 
     :param f: the file to read from
@@ -42,71 +47,17 @@ def readTrees(f, stripComments = False):
     if stripComments:
         lines = _stripComments(lines)
     trees = "".join(lines).split("\n\n")
-    trees = map(lambda s: s.strip(), trees)
-    trees = filter(lambda s: s != "", trees)
-    trees = map(lovett.tree.LovettTree, trees)
+    sys.stderr.write("parallel is: %s\n" % parallel)
+    if parallel:
+        p = multiprocessing.Pool()
+        trees = p.map(strip, trees)
+        trees = filter(lambda s: s != "", trees)
+        trees = p.map(parse, trees)
+    else:
+        trees = map(lambda s: s.strip(), trees)
+        trees = filter(lambda s: s != "", trees)
+        trees = map(lovett.tree.LovettTree.parse, trees)
     return trees
-
-# TODO: move to Corpus class?
-def readCorpus(f, stripComments = True):
-    """Read a `Corpus` from a file.
-
-    :param f: the file to read from
-    :type f: file
-
-    """
-    all_trees = readTrees(f, stripComments)
-    version_tree = all_trees[0]
-    version_dict = _parseVersionTree(version_tree)
-    if version_dict is None:
-        # An old file, put the version back on the text
-        return lovett.corpus.Corpus(None, all_trees)
-    else:
-        return lovett.corpus.Corpus(version_dict, all_trees[1:])
-
-def _parseVersionTree(t):
-    """Parse a version tree.
-
-    A version tree must have the form:
-
-    ::
-
-      ( (VERSION (KEY1 val1)
-                 (KEY2 (SUBKEY1 val1))))
-
-    :param t: the version tree to parse
-    :type t: `LovettTree`
-
-    """
-    version = t[0]
-    if version.node != "VERSION":
-        return None
-    return _treeToDict(t[0])
-
-def _treeToDict(t):
-    """Convert a `LovettTree` to a dictionary.
-
-    Each key in the dictionary corresponds to a node label from the
-    tree; each value is either a string (leaf node) or another dict
-    (recursive node.)
-
-    """
-    if isinstance(t[0], basestring):
-        return t[0]
-    else:
-        return dict([(n.node, _treeToDict(n)) for n in t])
-
-def _dictToMetadata(d):
-    return lovett.tree.LovettTree("METADATA", _dictToTrees(d))
-
-
-def _dictToTrees(d):
-    if isinstance(d, basestring):
-        return [d]
-    r = []
-    for k in d:
-        r.append(lovett.tree.LovettTree(k, _dictToTrees(d[k])))
-    return r
 
 def writeTrees(metadata, trees, file):
     # TODO: if trees are nltk trees (not strings), this barfs
@@ -119,4 +70,6 @@ def writeTrees(metadata, trees, file):
     """
     if metadata:
         file.write(_dictToMetadata(metadata) + "\n\n")
+    if isinstance(trees[0], lovett.tree.LovettTree):
+        trees = map(unicode, trees)
     file.write("\n\n".join(trees))
