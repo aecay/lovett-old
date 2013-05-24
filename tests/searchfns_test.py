@@ -4,17 +4,17 @@ from lovett.cs.searchfns import *
 import lovett.tree as T
 
 def leaf(label, word):
-    return T.ParentedTree(label, [word])
+    return T.LovettTree(label, [word])
 
-PT = T.ParentedTree
+LT = T.LovettTree.parse
 
 class TestSearchFns(unittest.TestCase):
     def setUp(self):
-        self.t = T.ParentedTree("""
-                                ( (IP (ADVP (Q very) (ADV slowly)) (, ,)
-                                (NP-SBJ (NPR John))
-                                (V eats)
-                                (NP-OB1 (D the) (ADJ tasty) (N apple))))""")
+        self.t = LT("""
+        ( (IP (ADVP (Q very) (ADV slowly)) (, ,)
+        (NP-SBJ (NPR John))
+        (V eats)
+        (NP-OB1 (D the) (ADJ tasty) (N apple))))""")
         self.tt = TreeTransformer(self.t)
 
     # TODO: test optional args, proper matching of dash labels, regex, etc.
@@ -32,6 +32,8 @@ class TestSearchFns(unittest.TestCase):
 
     def test_deep(self):
         self.tt.findNodes(hasLabel("IP") & deep(hasLabel("N")))
+        l = list(self.tt.matches())
+        print (repr(l))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
 
     def test_iPrecedes(self):
@@ -41,9 +43,9 @@ class TestSearchFns(unittest.TestCase):
     def test_not(self):
         self.tt.findNodes(hasLabel("IP") & daughters(~hasLabel("NP")))
         self.assertEqual(self.tt.matches(),
-                         [PT("(ADVP (Q very) (ADV slowly))"),
-                          PT("(, ,)"),
-                          PT("(V eats)")])
+                         [LT("(ADVP (Q very) (ADV slowly))"),
+                          LT("(, ,)"),
+                          LT("(V eats)")])
 
     def test_hasAncestor(self):
         self.tt.findNodes(hasLabel("N") & hasAncestor(hasLabel("IP")))

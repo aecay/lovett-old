@@ -3,6 +3,8 @@ import re
 import lovett.util as util
 import sys
 
+from functools import reduce
+
 __docformat__ = "restructuredtext en"
 
 def public(f):
@@ -33,6 +35,7 @@ class SearchFunction:
 
     # is this the place to put the ignore logic?
     def __call__(self, arg):
+        # TODO: memoize
         # This if statement is so that non-results percolate through a chained function.
         if arg:
             # Handle lists, returned by sister() etc.  this is looking
@@ -200,6 +203,16 @@ def hasLabel(label, exact = False):
                     return None
     return SearchFunction(_hasLabel)
 
+class StartsWith:
+    def __init__(self, string):
+        self.string = string
+    def match(self, to_match):
+        return to_match.startswith(self.string)
+
+@public
+def startsWith(string):
+    return StartsWith(string)
+
 # TODO: handle ignore
 # TODO: rename to hasText?
 @public
@@ -217,7 +230,7 @@ def hasLeafLabel(label):
 
     """
     def _hasLeafLabel(t):
-        if len(t) == 1 and isinstance(t[0], basestring):
+        if len(t) == 1 and isinstance(t[0], str):
             if hasattr(label, "match"):
                 if label.match(t[0]):
                     return t
@@ -288,7 +301,7 @@ def hasDaughter(fn = identity):
 
     """
     def _hasDaughter(t):
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             return None
         else:
             vals = [fn(d) for d in allDaughters(t)]
@@ -308,7 +321,7 @@ def daughters(fn = identity):
 
     """
     def _daughters(t):
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             return None
         else:
             vals = [fn(d) for d in allDaughters(t)]
@@ -324,7 +337,7 @@ def firstDaughter(fn = identity):
 
     """
     def _firstDaughter(t):
-        if isinstance(t, basestring):
+        if isinstance(t, str):
             return None
         else:
             for st in t:
@@ -851,7 +864,9 @@ def deep(fn):
         if t:
             ret = t.subtrees()
             ret = map(fn, ret)
-            return filter(identity, util.iter_flatten(ret))
+            # TODO: we don't want this forcing, but without it, we get buried
+            # too deep in lists
+            return list(x for x in util.iter_flatten(ret) if x)
         else:
             return t
     return SearchFunction(_deep)

@@ -1,5 +1,5 @@
-import lovett.tree as T
-import lovett.util as util
+import lovett.tree
+import lovett.util
 
 # TODO: addDashTag
 # TODO: look at conversations w jana for good ideas
@@ -9,7 +9,7 @@ class TreeTransformer:
         # Do not mutate the tree we are given -- make a copy for our use.
         self._tree = tree.copy(True)
         self._matches = []
-        self._max_trace = util.getLargestIndex(self._tree)
+        self._max_trace = lovett.util.getLargestIndex(self._tree)
 
     # remove me?
     def _testPos(self, p, fn):
@@ -21,17 +21,25 @@ class TreeTransformer:
     # TODO: add depth argument to allow restricting the depth of
     # searches and/or add "findFromRoot" which only calls the predicate
     # with the root node
-    def findNodes(self, fn = lambda x: x):
+    def findNodes(self, fn = lambda x: x, deep = True):
         self._matches = []
-        for p in self._tree.subtrees():
+        if deep:
+            to_match = self._tree.subtrees()
+        else:
+            to_match = self._tree
+        for p in to_match:
             res = fn(p)
             if res:
                 # Fuck, this is excruciating
-                self._matches.extend(list(util.iter_flatten([res])))
+                self._matches.extend(list(lovett.util.iter_flatten([res])))
         return self
 
+    # TODO: consolidate these
     def storeMatchData(self, fn):
         self._matchData = map(fn, self._matches)
+    def queryMatches(self, fn):
+        return map(fn, self._matches)
+
 
     # Should we remove this?  It is probably never necessary, except for
     # convenience, and it makes things complicated (can filter turn a
@@ -47,7 +55,7 @@ class TreeTransformer:
                 # TODO: make eatch match be an object, with metadata
                 # dict.  then map \x -> ObjWMD(x, old_md) over the list
                 # of results here
-                new_matches += list(util.iter_flatten([res]))
+                new_matches += list(lovett.util.iter_flatten([res]))
                 new_match_data += [self._matchData[m]] * len(res)
         self._matches = new_matches
         self._matchData = new_match_data
@@ -58,20 +66,36 @@ class TreeTransformer:
 
     def addParentNode(self, name, moveIndex = False):
         for m in self._matches:
-            barf = T.ParentedTree("BARF", [])
+            barf = lovett.tree.ParentedTree("BARF", [])
             t = self._tree
             pos = m.treepos
             old = t[pos]
             t[pos] = barf
-            new = T.ParentedTree(name, [old])
+            new = lovett.tree.ParentedTree(name, [old])
             if moveIndex:
-                index = util.removeIndexFromTree(old)
-                util.addIndexToTree(index, new)
+                index = lovett.util.removeIndexFromTree(old)
+                lovett.util.addIndexToTree(index, new)
             t[pos] = new
         return self
 
     def addParentNodeSpanning(self, name, fn, immediate = False, right = True,
                               to_end = False):
+        """Add a node over the matched node and some of its siblings.
+
+        :param name: the name of the node to add
+        :type name: string
+        :param fn: a predicate indicating where to stop adding siblings to the new parent
+        :type fn: function
+        :param immediate: whether the predicate ``fn`` must match the immediate sibling
+        :type immediate: boolean
+        :param right: whether to look to the right or to the left for siblings
+        :type right: boolean
+        :param to_end: unimplemented TODO
+        :type to_end: boolean"""
+
+        # TODO: simplify this by using a dual match, then making addParent
+        # polymorphic?
+
         # Must be done in two steps because otherwise we shit all over
         # our list of positions.  ...then we switched to storing matches
         # as trees, not positions, but why mess with what works?
@@ -80,11 +104,11 @@ class TreeTransformer:
         # it.  Otherwise, we will do weird things if we have ex. N N ADJ
         # and we try to extend NP over N...ADJ.
 
-        barf = T.ParentedTree("BARF", [])
+        barf = lovett.tree.ParentedTree("BARF", [])
         t = self._tree
         for m in self._matches:
-            acc = []
             p = m
+            acc = [p]
             while True:
                 if right:
                     p = p.right_sibling
@@ -94,19 +118,17 @@ class TreeTransformer:
                     acc.append(p)
                     if fn(p):
                         if not right:
-                            # I'm not sure if this is strictly necessary
                             acc.reverse()
                         for n in acc:
-                            del t[n.treepos]
-                        pp = m.treepos
+                            del t[n.treeposition]
+                        pp = m.treepossition
                         t[pp] = barf
-                        t[pp] = T.ParentedTree(name, [m] + acc)
+                        t[pp] = lovett.tree.ParentedTree(name, acc)
                         break
                     if immediate:
                         break
                 else:
                     break
-
         return self
 
     # Instead of immediate -- another function extendOne?
@@ -151,12 +173,12 @@ class TreeTransformer:
         for m in self._matches:
             p = m.parent
             pi = m.parent_index
-            to_insert = tree or T.ParentedTree(label, [word])
+            to_insert = tree or lovett.tree.ParentedTree(label, [word])
             if coindex:
                 index = self._max_trace + 1
                 # TODO(?): a way to add gapping indices with = instead of -
-                util.addIndexToTree(index, m)
-                util.addIndexToTree(index, to_insert)
+                lovett.util.addIndexToTree(index, m)
+                lovett.util.addIndexToTree(index, to_insert)
                 self._max_trace = index
             if not before:
                 pi = pi + 1
@@ -165,7 +187,7 @@ class TreeTransformer:
 
     def addDaughter(self, label = "XXX", word = "X-X", tree = None):
         for m in self._matches:
-            to_insert = tree or T.ParentedTree(label, [word])
+            to_insert = tree or lovett.tree.ParentedTree(label, [word])
             m.insert(0, to_insert)
         return self
 
@@ -199,7 +221,13 @@ class TreeTransformer:
         return self._tree
 
     def pt(self):
-        return self._tree.pprint()
+        # TODO: remove, replace with __unicode__
+        return unicode(self._tree)
+
+    def __unicode__(self):
+        return unicode(self._tree)
+    def __str__(self):
+        return str(unicode(self))
 
 
 # TODO: what happens if we do ~daughters(...) ? Should not be
