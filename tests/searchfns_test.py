@@ -23,6 +23,14 @@ class TestSearchFns(unittest.TestCase):
         self.tt.findNodes(hasLabel("N"))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
 
+        self.tt.findNodes(hasLabel("NP"))
+        self.assertEqual(self.tt.matches(),
+                         [LT("(NP-SBJ (NPR John))"),
+                          LT("(NP-OB1 (D the) (ADJ tasty) (N apple))")])
+
+        self.tt.findNodes(hasLabel("NP", exact=True))
+        self.assertEqual(self.tt.matches(), [])
+
     def test_hasDaughter(self):
         self.tt.findNodes(hasDaughter(hasLabel("V")))
         self.assertEqual(self.tt.matches(), [self.t[0]])
@@ -87,10 +95,19 @@ class TestSearchFns(unittest.TestCase):
         search_fns.remove("daughterCount")
         search_fns.remove("sharesLabelWith")
         # Remove unexported functions
-        search_fns = search_fns.intersection(set(locals().keys()))
+        search_fns = search_fns.intersection(set(globals().keys()))
+
+        self.assertGreater(len(search_fns), 0)
 
         for sf in search_fns:
             print (sf)
             s = "%s('foo')" % sf
             i = eval(s)
             self.assertEqual(s, str(i))
+
+    @unittest.expectedFailure
+    def test_startswith(self):
+        self.tt.findNodes(hasWord(startsWith("t")))
+        self.assertEqual(self.tt.matches(),
+                         [leaf("D", "the"),
+                          leaf("ADJ", "tasty")])
