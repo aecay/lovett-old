@@ -9,7 +9,7 @@ from functools import reduce
 
 __docformat__ = "restructuredtext en"
 
-def public(f):
+def public(f): # pragma: no cover
     # Use a decorator to avoid retyping function/class names.
 
     # * Based on an idea by Duncan Booth:
@@ -308,6 +308,9 @@ def hasLemma(lemma):
 
 # TODO: make aware of different formats (deep, dash)
 # is this redundant with hasLeafLabel?  Should this be called hasText?
+
+# TODO: doesn't work with startswith and friends. should be refactored for new
+# tree impl
 @public
 def hasWord(word):
     """Tests if a node has the given word (exact text).
