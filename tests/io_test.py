@@ -7,31 +7,32 @@ from lovett.corpus import Corpus
 import lovett.io
 
 class IOTest(unittest.TestCase):
-    def test_readTrees(self):
-        f = StringIO(textwrap.dedent("""
-        /*
-        hello
-        I am a comment.
-        */
+    pass
+    # def test_readTrees(self):
+    #     f = StringIO(textwrap.dedent("""
+    #     /*
+    #     hello
+    #     I am a comment.
+    #     */
 
-        /~*
-        I am another
-        *~/
-        (IP (NP Foos) (V bar))
+    #     /~*
+    #     I am another
+    #     *~/
+    #     (IP (NP Foos) (V bar))
 
-        <+ another comment +>
-
-
-        (IP (NP Bazes) (V quux))
+    #     <+ another comment +>
 
 
+    #     (IP (NP Bazes) (V quux))
 
 
-        <+ yay +>
-        """).strip())
-        self.assertEqual(lovett.io.readTrees(f, stripComments = True),
-                         [LovettTree.parse("(IP (NP Foos) (V bar))"),
-                          LovettTree.parse("(IP (NP Bazes) (V quux))")])
+
+
+    #     <+ yay +>
+    #     """).strip())
+    #     self.assertEqual(lovett.io.readTrees(f, stripComments = True),
+    #                      [LovettTree.parse("(IP (NP Foos) (V bar))"),
+    #                       LovettTree.parse("(IP (NP Bazes) (V quux))")])
 
     # TODO: move to tree test
     # def test_readCorpus(self):
