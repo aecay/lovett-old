@@ -4,12 +4,13 @@ import lovett.util as util
 import sys
 import inspect
 import random
+import operator
 
 from functools import reduce
 
 __docformat__ = "restructuredtext en"
 
-def public(f): # pragma: no cover
+def public(f):  # pragma: no cover
     # Use a decorator to avoid retyping function/class names.
 
     # * Based on an idea by Duncan Booth:
@@ -32,7 +33,7 @@ class SearchFunction:
     TODO: calling and return conventions for such a function
 
     """
-    def __init__(self, fn, arg = ""):
+    def __init__(self, fn, arg=""):
         self.fn = fn
         fn_str = fn.__name__[1:]
         self.fn_str = fn_str
@@ -41,7 +42,8 @@ class SearchFunction:
     # is this the place to put the ignore logic?
     def __call__(self, arg):
         # TODO: memoize
-        # This if statement is so that non-results percolate through a chained function.
+        # This if statement is so that non-results percolate through a chained
+        # function.
         if arg:
             # Handle lists, returned by sister() etc.  this is looking
             # ugly, as we also handle lists in the treetransformer class
@@ -164,6 +166,7 @@ class Identity(object):
     # This must be a class, in order to have a __str__ method
     def __call__(self, arg):
         return arg
+
     def __str__(self):
         # TODO: this isn't idempotent, and doesn't play well with
         # multiprocessing
@@ -202,7 +205,7 @@ def _get_arg_string(x):
 # TODO: handle ignore
 # TODO: NP=2 should give hasLabel("NP") -> True
 @public
-def hasLabel(label, exact = False):
+def hasLabel(label, exact=False):
     """Tests if a node has a given label.
 
     :param label: The label to test for.  If a string, the behavior is
@@ -236,7 +239,8 @@ def hasLabel(label, exact = False):
                     return None
             else:
                 # TODO: gapping indices with =
-                if exact_match or to_match[slice(len(label)+1)] == label + "-":
+                if exact_match or \
+                   to_match[slice(len(label) + 1)] == label + "-":
                     return t
                 else:
                     return None
@@ -245,6 +249,7 @@ def hasLabel(label, exact = False):
 class StartsWith:
     def __init__(self, string):
         self.string = string
+
     def match(self, to_match):
         return to_match.startswith(self.string)
 
@@ -343,7 +348,7 @@ def hasDashTag(tag):
     r.arg = tag
 
 @public
-def hasDaughter(fn = identity):
+def hasDaughter(fn=identity):
     """Tests if a node has a daughter matching a predicate.  If so, the
     original node (not the daughter) is returned.  Matching only looks
     at immediate daughters -- to extend further down the tree, see the
@@ -364,7 +369,7 @@ def hasDaughter(fn = identity):
     return SearchFunction(_hasDaughter, fn)
 
 @public
-def daughters(fn = identity):
+def daughters(fn=identity):
     """Finds and returns all daughters of a node which match a
     predicate.  Only looks at immediate daughters -- see `deep` for
     deep matching.
@@ -383,7 +388,7 @@ def daughters(fn = identity):
     return SearchFunction(_daughters, fn)
 
 @public
-def firstDaughter(fn = identity):
+def firstDaughter(fn=identity):
     """Returns the first (left-to-right) daughter of a node which
     matches a predicate, or nothing if no daughters match.
 
@@ -400,13 +405,13 @@ def firstDaughter(fn = identity):
             return None
     return SearchFunction(_firstDaughter, fn)
 
-def hasXSister(fn = identity, sisterFn = allSisters):
+def hasXSister(fn=identity, sister_fn=allSisters):
     """Internal function.
 
     TODO: document, don't export
     """
     def _hasXSister(t):
-        sisters = sisterFn(t)
+        sisters = sister_fn(t)
         if sisters:
             vals = [fn(s) for s in sisters]
             if reduce(functionalOr, vals):
@@ -414,14 +419,14 @@ def hasXSister(fn = identity, sisterFn = allSisters):
             else:
                 return None
         else:
-           return None
+            return None
     r = SearchFunction(_hasXSister, fn)
-    s = sister_fn_map[sisterFn.__name__]
+    s = sister_fn_map[sister_fn.__name__]
     r.fn_str = "has" + s[0].upper() + s[1:]
     return r
 
 @public
-def hasSister(fn = identity):
+def hasSister(fn=identity):
     """Tests if a node has a sister matching a predicate, and returns
     the original node if so.
 
@@ -431,7 +436,7 @@ def hasSister(fn = identity):
     return hasXSister(fn, allSisters)
 
 @public
-def hasLeftSister(fn = identity):
+def hasLeftSister(fn=identity):
     """Like `hasSister`, but only considers sisters to the left of the
     node.
 
@@ -439,7 +444,7 @@ def hasLeftSister(fn = identity):
     return hasXSister(fn, allLeftSisters)
 
 @public
-def hasRightSister(fn = identity):
+def hasRightSister(fn=identity):
     """Like `hasSister`, but only considers sisters to the right of the
     node.
 
@@ -447,7 +452,7 @@ def hasRightSister(fn = identity):
     return hasXSister(fn, allRightSisters)
 
 @public
-def hasImmRightSister(fn = identity):
+def hasImmRightSister(fn=identity):
     """Like `hasSister`, but only considers the immediate right sister
     of the original node.
 
@@ -455,31 +460,31 @@ def hasImmRightSister(fn = identity):
     return hasXSister(fn, nextRightSister)
 
 @public
-def hasImmLeftSister(fn = identity):
+def hasImmLeftSister(fn=identity):
     """Like `hasSister`, but only considers the immediate left sister
     of the original node.
 
     """
     return hasXSister(fn, nextLeftSister)
 
-def sistersX(fn = identity, sisterFn = allSisters):
+def sistersX(fn=identity, sister_fn=allSisters):
     """Internal function
 
     TODO: document, don't export
 
     """
     def _sisters(t):
-        vals = [fn(s) for s in sisterFn(t)]
+        vals = [fn(s) for s in sister_fn(t)]
         return [v for v in vals if v]
     r = SearchFunction(_sisters, fn)
-    s = sister_fn_map[sisterFn.__name__]
+    s = sister_fn_map[sister_fn.__name__]
     if not s.startswith("imm"):
-        s +=  "s"
+        s += "s"
     r.fn_str = s
     return r
 
 @public
-def sisters(fn = identity):
+def sisters(fn=identity):
     """Tests if a node has any sisters matching a predicate, and returns
     the sister(s) if so.
 
@@ -489,7 +494,7 @@ def sisters(fn = identity):
     return sistersX(fn, allSisters)
 
 @public
-def leftSisters(fn = identity):
+def leftSisters(fn=identity):
     """Like `sisters`, but only considers sisters to the left of the
     node.
 
@@ -497,7 +502,7 @@ def leftSisters(fn = identity):
     return sistersX(fn, leftSisters)
 
 @public
-def rightSisters(fn = identity):
+def rightSisters(fn=identity):
     """Like `sisters`, but only considers sisters to the right of the
     node.
 
@@ -505,7 +510,7 @@ def rightSisters(fn = identity):
     return sistersX(fn, rightSisters)
 
 @public
-def immLeftSister(fn = identity):
+def immLeftSister(fn=identity):
     """Like `sisters`, but only considers the immediate left sister
     of the original node.
 
@@ -513,7 +518,7 @@ def immLeftSister(fn = identity):
     return sistersX(fn, nextLeftSister)
 
 @public
-def immRightSister(fn = identity):
+def immRightSister(fn=identity):
     """Like `sisters`, but only considers the immediate right sister
     of the original node.
 
@@ -522,7 +527,7 @@ def immRightSister(fn = identity):
 
 # TODO: how to handle ignoring parent?
 @public
-def hasParent(fn = identity):
+def hasParent(fn=identity):
     """Tests if a node's parent matches a predicate, and returns the
     original node if so.
 
@@ -538,7 +543,7 @@ def hasParent(fn = identity):
     return SearchFunction(_hasParent, fn)
 
 @public
-def parent(fn = identity):
+def parent(fn=identity):
     """Tests if a node's parent matches a predicate, and returns the
     parent node if so.
 
@@ -551,7 +556,7 @@ def parent(fn = identity):
     return SearchFunction(_parent, fn)
 
 @public
-def hasAncestor(fn = identity):
+def hasAncestor(fn=identity):
     """Tests if any of a node's ancestors match a predicate, and returns
     the original node if so.
 
@@ -570,7 +575,7 @@ def hasAncestor(fn = identity):
     return SearchFunction(_hasAncestor, fn)
 
 @public
-def ancestor(fn = identity):
+def ancestor(fn=identity):
     """Tests if any of a node's ancestors match a predicate, and returns
     the first matching ancestor.
 
@@ -591,7 +596,7 @@ def ancestor(fn = identity):
             return None
     return SearchFunction(_ancestor, fn)
 
-def leftEdge(fn = identity):
+def leftEdge(fn=identity):
     """Internal function.
 
     TODO: document, don't export
@@ -610,7 +615,7 @@ def leftEdge(fn = identity):
     return SearchFunction(_leftEdge, fn)
 
 @public
-def iPrecedes(fn = identity):
+def iPrecedes(fn=identity):
     """Tests if a node immediately precedes (linearly) a node matching a
     predicate, and returns the original node if so.
 
@@ -639,7 +644,7 @@ def isLeaf():
             return t
         else:
             return None
-    return SearchFunction(_isLeaf, fn)
+    return SearchFunction(_isLeaf)
 
 @public
 def isRoot():
@@ -653,10 +658,10 @@ def isRoot():
             return t
         else:
             return None
-    return SearchFunction(_isRoot, fn)
+    return SearchFunction(_isRoot)
 
 @public
-def daughterCount(n, match = "equal"):
+def daughterCount(n, match="equal"):
     """Tests if the target node has a certain number of daughters.
 
     :param n: the desired number of daughters
@@ -667,6 +672,7 @@ def daughterCount(n, match = "equal"):
     """
     if match != "equal" and match != "less" and match != "greater":
         raise Exception("match argument to daughterCount is misspecified")
+
     def _daughterCount(t):
         have_match = False
         if match == "equal":
@@ -685,7 +691,7 @@ def daughterCount(n, match = "equal"):
     return SearchFunction(_daughterCount, "%s, match='%s'" % (n, match))
 
 @public
-def coIndexed(fn = identity):
+def coIndexed(fn=identity):
     """Tests if any nodes coindexed with the original node match a
     predicate.  Returns the matching coindexed nodes.
 
@@ -693,17 +699,18 @@ def coIndexed(fn = identity):
 
     """
     def _coIndexed(t):
-        theIdx = util.indexOfTree(t)
-        if theIdx == 0:
+        the_idx = util.indexOfTree(t)
+        if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and x != t)
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+                            x != t)
         c = list(c)
         c = filter(fn, c)
         return c
     return SearchFunction(_coIndexed, fn)
 
 @public
-def hasCoIndexed(fn = identity):
+def hasCoIndexed(fn=identity):
     """Tests if any nodes coindexed with the original node match a
     predicate.  Returns the original node.
 
@@ -711,10 +718,11 @@ def hasCoIndexed(fn = identity):
 
     """
     def _hasCoIndexed(t):
-        theIdx = util.indexOfTree(t)
-        if theIdx == 0:
+        the_idx = util.indexOfTree(t)
+        if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and x != t)
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+                            x != t)
         c = list(c)
         c = filter(fn, c)
         if c and len(c) > 0:
@@ -724,7 +732,7 @@ def hasCoIndexed(fn = identity):
     return SearchFunction(_hasCoIndexed, fn)
 
 @public
-def antecedent(fn = identity):
+def antecedent(fn=identity):
     """Tests whether the antecedent of a node matches a predicate, and
     returns the antecedent if so.  The antecedent of a node is the
     unique node which is coindexed with that node, and is not itself a
@@ -735,11 +743,11 @@ def antecedent(fn = identity):
     """
     # TODO: test whether the target node is a trace
     def _antecedent(t):
-        theIdx = util.indexOfTree(t)
-        if theIdx == 0:
+        the_idx = util.indexOfTree(t)
+        if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
-                           isinstance(x[0], T.Tree))
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+                            isinstance(x[0], T.Tree))
         c = list(c)
         if len(c) == 1:
             if fn(c[0]):
@@ -751,7 +759,7 @@ def antecedent(fn = identity):
     return SearchFunction(_antecedent, fn)
 
 @public
-def hasAntecedent(fn = identity):
+def hasAntecedent(fn=identity):
     """Tests whether the antecedent of a node matches a predicate, and
     returns the original node if so.  The antecedent of a node is the
     unique node which is coindexed with that node, and is not itself a
@@ -761,11 +769,11 @@ def hasAntecedent(fn = identity):
 
     """
     def _hasAntecedent(t):
-        theIdx = util.indexOfTree(t)
-        if theIdx == 0:
+        the_idx = util.indexOfTree(t)
+        if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == theIdx and \
-                           isinstance(x[0], T.Tree))
+        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+                            isinstance(x[0], T.Tree))
         # Need to convert generator -> list to check length
         c = list(c)
         if len(c) == 1:
@@ -824,7 +832,7 @@ def isIndexed():
     return SearchFunction(_isIndexed, "")
 
 @public
-def sharesLabelWith(fn = identity, all = False):
+def sharesLabelWith(fn=identity, all=False):
     """Test whether a node shares a label with another.
 
     The supplied search function picks out the set of nodes, beginning
@@ -855,7 +863,7 @@ def sharesLabelWith(fn = identity, all = False):
     return SearchFunction(_sharesLabelWith, "%s, all='%s'" % (fn, all))
 
 @public
-def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x == y)):
+def sharesLabelWithMod(fn=identity, all=False, comparator=operator.eq):
     """Test whether a node shares a label with another.
 
     The supplied search function picks out the set of nodes, beginning
@@ -880,7 +888,7 @@ def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x
         # TODO: If we mandated that searchfns return lists, then there
         # would be no need to do this...
         for c in util.iter_flatten([candidates]):
-            if transformer(the_label, c.node):
+            if comparator(the_label, c.node):
                 if not all:
                     return t
             else:
@@ -890,13 +898,14 @@ def sharesLabelWithMod(fn = identity, all = False, transformer = (lambda x, y: x
             return t
         else:
             return None
-    return SearchFunction(_sharesLabelWithMod, '%s, all="%s", transformer = "%s"' %
-                          (fn, all, transformer))
+    return SearchFunction(_sharesLabelWithMod,
+                          '%s, all="%s", comparator="%s"' %
+                          (fn, all, comparator))
 
 
 # Function modifiers
 
-def reduceHack(x,y):
+def reduceHack(x, y):
     # This implementation is too fault-tolerant to inspire confidence.
     # I'd rather it break if there's a bug.
     # if not isinstance(x, list):
@@ -942,7 +951,8 @@ def ignoring(ignore_fn, fn):
         res = fn(t)
         setIgnore(old_ignore)
         return res
-    return SearchFunction(_ignoring, 'ignore_fn="%s", fn="%s"' % (ignore_fn, fn))
+    return SearchFunction(_ignoring, 'ignore_fn="%s", fn="%s"' %
+                          (ignore_fn, fn))
 
 # Utility functions
 
@@ -955,5 +965,5 @@ def functionalSSOr(x, y):
     else:
         return y
 
-def functionalOr(x,y):
+def functionalOr(x, y):
     return x or y
