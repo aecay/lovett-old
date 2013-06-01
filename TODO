@@ -35,7 +35,31 @@ ND = dat
 
 NPRSA = proper plural acc
 
-N, D, ADJ, Q, NPR, VPR(P), 
+N, D, ADJ, Q, NPR, VPR(P),
 
 
 for lovett -- a way to talk about the antecedent of a trace
+
+
+
+- lru cache
+- rewrite tree impl: one base class, terminal node/non-terminal/metadata/coding children
+- parallelize/cache/think about how to best optimize repl/script use cases
+
+http://stackoverflow.com/questions/226693/python-disk-based-dictionary
+http://stackoverflow.com/questions/7381258/minimising-reading-from-and-writing-to-disk-in-python-for-a-memory-heavy-operati
+
+shelve?
+
+https://code.google.com/p/rzzzwilson/wiki/pyCacheBack
+http://stackoverflow.com/questions/8714358/smart-caching-of-expensive-objects-in-python
+http://www.monlp.com/2012/05/17/using-berkeleydb-to-create-a-large-n-gram-table/
+
+
+http://nedbatchelder.com/text/unipain.html
+
+collections.Callable for searchfn
+decorator for new searchfns
+
+
+convert to enum for python 3.4: corpus version, index type (gap or regular)
