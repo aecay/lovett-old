@@ -1,3 +1,5 @@
+import copy
+
 import lovett.tree
 import lovett.util
 
@@ -7,7 +9,7 @@ import lovett.util
 class TreeTransformer:
     def __init__(self, tree):
         # Do not mutate the tree we are given -- make a copy for our use.
-        self._tree = tree.copy(True)
+        self._tree = copy.deepcopy(tree)
         self._matches = []
         self._max_trace = lovett.util.getLargestIndex(self._tree)
 
@@ -24,7 +26,7 @@ class TreeTransformer:
     def findNodes(self, fn = lambda x: x, deep = True):
         self._matches = []
         if deep:
-            to_match = self._tree.subtrees()
+            to_match = self._tree.subtrees
         else:
             to_match = self._tree
         for p in to_match:

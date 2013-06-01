@@ -30,7 +30,7 @@ def validateTagset(tree, tags, dashes):
 
 ### Traces/movement indices
 def getLargestIndex(tree):
-    return reduce(max, map(indexOfTree, tree.subtrees()))
+    return reduce(max, map(indexOfTree, tree.subtrees))
 
 def addIndexToTree(index, tree):
     tree.metadata['INDEX'] = index
