@@ -2,12 +2,12 @@ import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
-import lovett.tree as T
+import lovett.tree_new as T
 
 def leaf(label, word):
-    return T.LovettTree(label, [word])
+    return T.Leaf(label, word)
 
-LT = T.LovettTree.parse
+LT = T.parse
 
 class TestSearchFns(unittest.TestCase):
     def setUp(self):
@@ -42,7 +42,7 @@ class TestSearchFns(unittest.TestCase):
     def test_deep(self):
         self.tt.findNodes(hasLabel("IP") & deep(hasLabel("N")))
         l = list(self.tt.matches())
-        print (repr(l))
+        print(repr(l))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
 
     def test_iPrecedes(self):
@@ -88,7 +88,9 @@ class TestSearchFns(unittest.TestCase):
                     return isinstance(x("foo"), SearchFunction)
                 except:
                     return False
-        search_fns = set(map(lambda x: x.__name__, filter(is_search_fn, lovett.cs.searchfns.__dict__.values())))
+        search_fns = set(map(lambda x: x.__name__,
+                             filter(is_search_fn,
+                                    lovett.cs.searchfns.__dict__.values())))
         search_fns.remove("setIgnore")
         # TODO: test these
         search_fns.remove("sharesLabelWithMod")
@@ -100,7 +102,7 @@ class TestSearchFns(unittest.TestCase):
         self.assertGreater(len(search_fns), 0)
 
         for sf in search_fns:
-            print (sf)
+            print(sf)
             s = "%s('foo')" % sf
             i = eval(s)
             self.assertEqual(s, str(i))

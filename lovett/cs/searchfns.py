@@ -1,4 +1,4 @@
-import lovett.tree as T
+import lovett.tree_new as T
 import re
 import lovett.util as util
 import sys
@@ -45,7 +45,7 @@ class SearchFunction:
         if arg:
             # Handle lists, returned by sister() etc.  this is looking
             # ugly, as we also handle lists in the treetransformer class
-            if isinstance(arg, list) and not isinstance(arg, T.Tree):
+            if isinstance(arg, list):
                 # TODO: this branch appears never to get called.  It
                 # looks like a bottleneck in performance, so verify this
                 # and remove.
@@ -152,6 +152,8 @@ def nextRightSister(t):
     return [res]
 
 def allDaughters(t):
+    if not hasattr(t, '__iter__'):
+        return t
     return [d for d in t if not shouldIgnore(d)]
 
 # Utility functions
@@ -216,7 +218,7 @@ def hasLabel(label, exact = False):
     def _hasLabel(t):
         to_match = ""
         if isinstance(t, T.Tree):
-            to_match = t.node
+            to_match = t.label
         else:
             return None
 
@@ -351,7 +353,7 @@ def hasDaughter(fn = identity):
 
     """
     def _hasDaughter(t):
-        if isinstance(t, str):
+        if not hasattr(t, '__iter__'):
             return None
         else:
             vals = [fn(d) for d in allDaughters(t)]
@@ -371,8 +373,10 @@ def daughters(fn = identity):
 
     """
     def _daughters(t):
-        if isinstance(t, str):
-            return None
+        print(t)
+        if not hasattr(t, '__iter__'):
+            print("ret: " % fn(t))
+            return fn(t)
         else:
             vals = [fn(d) for d in allDaughters(t)]
             return [v for v in vals if v]
@@ -921,7 +925,7 @@ def deep(fn):
         # TODO: We have null handling here is because we don't go
         # through SearchFunction again.  Should we?
         if t:
-            ret = t.subtrees()
+            ret = t.subtrees
             ret = map(fn, ret)
             # TODO: we don't want this forcing, but without it, we get buried
             # too deep in lists
