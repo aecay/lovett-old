@@ -114,7 +114,7 @@ class Corpus(collections.abc.MutableSequence):
         :type fil: string of ``file`` object
 
         """
-        if not isinstance(fil, file):
+        if isinstance(fil, str):
             fil = open(fil, "w")
         lovett.io.writeTrees(self.metadata, self.trees, fil)
 
