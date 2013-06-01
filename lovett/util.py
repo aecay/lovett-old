@@ -1,5 +1,5 @@
 import sys # for debugging only
-import lovett.tree
+import lovett.tree_new
 
 from functools import reduce
 
@@ -30,83 +30,26 @@ def validateTagset(tree, tags, dashes):
 
 ### Traces/movement indices
 def getLargestIndex(tree):
-    # TODO: this must be made to understand the new format, where I
-    # think I want indices in METADATA
     return reduce(max, map(indexOfTree, tree.subtrees()))
 
 def addIndexToTree(index, tree):
-    # TODO: do dash-tags go inside or outside index?
-    try:
-        if isinstance(tree[0], str) and tree[0][0] == "*":
-            # This is an EC; so add index to the leaf
-            temp = tree[0].split("-")
-            # This is a bogus test for the presence of a lemma, in general.  But
-            # traces should not contain dashes, so it is OK here.
-            if len(temp) == 1:
-                temp.append(str(index))
-            else:
-                temp.insert(-1, str(index))
-            tree[0] = "-".join(temp)
-        else:
-            # not EC; add index to the label
-            tree.node = tree.node + "-" + str(index)
-    except IndexError:
-        sys.stderr.write("idxerr, tree is: %s" % tree)
+    tree.metadata['INDEX'] = index
 
 def indexOfTree(tree):
-    try:
-        if isinstance(tree[0], str) and tree[0][0] == "*":
-            # This is an EC
-            temp = tree[0].split("-")
-            ret = 0
-            if len(temp) == 2 and temp[-1].isdigit():
-                return int(temp[-1])
-            # TODO: how can this ever happen?
-            elif len(temp) == 3 and temp[-2].isdigit():
-                return int(temp[-2])
-        if "=" in tree.node:
-            temp = tree.node.split("=")
-        else:
-            temp = tree.node.split("-")
-        ret = 0
-        try:
-            ret = int(temp[-1])
-        except ValueError:
-            pass
-        return ret
-    except IndexError:
-        sys.stderr.write("idxerr, tree is: %s" % tree)
+    return tree.metadata.get('INDEX', 0)
 
 
 def removeIndexFromTree(tree):
-    old_index = indexOfTree(tree)
-    if isinstance(tree[0], str) and tree[0][0] == "*":
-        # This is an EC
-        temp = tree[0].split("-")
-        if len(temp) == 2 and temp[-1].isdigit():
-            temp.pop()
-        elif len(temp) == 3 and temp[-2].isdigit():
-            temp.pop(-2)
-        tree[0] = temp.join("-")
-    else:
-        temp = tree.node.split("-")
-        ret = 0
-        if temp[-1].isdigit():
-            temp.pop()
-        tree.node = temp.join("-")
-    return old_index
+    del tree.metadata['INDEX']
+    del tree.metadata['IDX-TYPE']
 
 
 def isLeafNode(t):
-    if not isinstance(t[0], lovett.tree.Tree):
-        return True
-    else:
-        return False
+    return isinstance(t, lovett.tree_new.Leaf)
+
 
 def isTrace(t):
-    return isLeafNode(t) and (t[0][0:3] == "*T*" or
-                              t[0][0:5] == "*ICH*" or
-                              t[0][0:4] == "*CL*")
+    return isLeafNode(t) and t.text in ["*T*","*ICH*","*CL*","*"]
 
 def iter_flatten(iterable):
     it = iter(iterable)
@@ -190,8 +133,10 @@ def _parseVersionTree(t):
     :type t: `LovettTree`
 
     """
-    version = t[0]
-    if version.node != "VERSION":
+    if not isinstance(t, lovett.tree_new.Root):
+        raise ValueError("pass a Root tree to _parseVersionTree: %r" % t)
+    version = t.tree
+    if version.label != "VERSION":
         return None
     return _treeToDict(t[0])
 
@@ -203,24 +148,10 @@ def _treeToDict(t):
     (recursive node.)
 
     """
-    if isinstance(t[0], str):
-        return t[0]
+    if isinstance(t, lovett.tree_new.Leaf):
+        return t.text
     else:
-        return dict([(n.node, _treeToDict(n)) for n in t])
-
-def _dictToMetadata(d):
-    if not d:
-        return None
-    return lovett.tree.LovettTree("METADATA", _dictToTrees(d))
-
-
-def _dictToTrees(d):
-    if isinstance(d, str):
-        return [d]
-    r = []
-    for k in d:
-        r.append(lovett.tree.LovettTree(k, _dictToTrees(d[k])))
-        return r
+        return dict([(n.label, _treeToDict(n)) for n in t])
 
 UNIFY_VERSION_IGNORE_KEYS = ["HASH"]
 
@@ -241,8 +172,8 @@ def metadata_str(dic, name, indent):
     r ="(" + name + " "
     l = len(r)
     def helper(d, k):
-        if isinstance(d[k], str):
-            return "(" + k + " " + d[k] + ")"
+        if not isinstance(d[k], dict):
+            return "(" + k + " " + str(d[k]) + ")"
         else:
             return metadata_str(d[k], k, indent + l)
     r += ("\n" + " " * (indent + l)).join(
