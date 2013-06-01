@@ -1,5 +1,3 @@
-import sys
-import tree
 import hashlib
 
 def isEmpty(tuple):
@@ -13,8 +11,6 @@ def isEmpty(tuple):
 
 def hashCorpus(corpus):
     out = ""
-    if corpus[0][0].node == "VERSION":
-        trees = trees[1:]
     for t in corpus:
         w = map(lambda x: x[1], filter(lambda x: not isEmpty(x), t.pos()))
         out += "\n".join(w)
