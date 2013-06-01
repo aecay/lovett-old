@@ -7,6 +7,27 @@ import lovett.tree_new as TN
 from lovett.tree_new import NonTerminal as NT
 from lovett.tree_new import Leaf as L
 
+class UtilFnsTest(unittest.TestCase):
+    def test_splitIndex(self):
+        self.assertEqual(TN._splitIndex("NP-1"),
+                         ("NP", "regular", 1))
+        self.assertEqual(TN._splitIndex("NP-FOO-1"),
+                         ("NP-FOO", "regular", 1))
+        self.assertEqual(TN._splitIndex("NP=1"),
+                         ("NP", "gap", 1))
+        self.assertIsNone(TN._splitIndex("NP")[1])
+        self.assertIsNone(TN._splitIndex("NP")[2])
+        self.assertRaises(ValueError, lambda: TN._splitIndex("NP=FOO=BAR"))
+
+    def test_parse(self):
+        self.assertIsNone(TN.parse(""))
+        self.assertIsNone(TN.parse("  \n  "))
+        self.assertRaises(TN.ParseError, lambda: TN.parse("(FOO"))
+        self.assertRaises(TN.ParseError, lambda: TN.parse("(FOO))"))
+        self.assertRaises(TN.ParseError, lambda: TN.parse("(FOO)"))
+        self.assertRaises(TN.ParseError, lambda: TN.parse("(FOO bar baz)"))
+
+
 class TreeTest(unittest.TestCase):
     def test_label(self):
         t = L("foo", "bar")
@@ -150,3 +171,53 @@ class RootTest(unittest.TestCase):
         self.assertRaises(ValueError, bar, r)
         r[0] = L("baz", "quux")
         self.assertEqual(r, TN.Root(None, L("baz", "quux")))
+
+
+class LeafTest(unittest.TestCase):
+    class MockCorpus(object):
+        def __init__(self, version):
+            self.version = version
+
+    def assertStrs(self, leaf, strs):
+        leaf.corpus = self.MockCorpus("old-style")
+        self.assertEqual(str(leaf), strs[0])
+        leaf.corpus = self.MockCorpus("dash")
+        self.assertEqual(str(leaf), strs[1])
+        leaf.corpus = self.MockCorpus("deep")
+        self.assertEqual(str(leaf), strs[2])
+
+    def test_str(self):
+        l = L("FOO", "bar")
+
+        self.assertStrs(l,
+                        ["(FOO bar)",
+                         "(FOO bar)",
+                         "(FOO (ORTHO bar))"])
+        l = L("FOO-1", "bar")
+        self.assertStrs(l,
+                        ["(FOO-1 bar)",
+                         "(FOO-1 bar)",
+                         textwrap.dedent(
+                        """
+                        (FOO (ORTHO bar)
+                             (METADATA (IDX-TYPE regular)
+                                       (INDEX 1)))""").strip()])
+        l = L("FOO", "bar")
+        l.metadata['LEMMA'] = "baz"
+        self.assertStrs(l,
+                        ["(FOO bar)",
+                         "(FOO bar-baz)",
+                         textwrap.dedent(
+                             """
+                             (FOO (ORTHO bar)
+                                  (METADATA (LEMMA baz)))""").strip()])
+
+        l = L("FOO", "*T*-1")
+        self.assertStrs(l,
+                        ["(FOO *T*-1)",
+                         "(FOO *T*-1)",
+                         textwrap.dedent(
+                         """
+                         (FOO (METADATA (ALT-ORTHO *T*)
+                                        (IDX-TYPE regular)
+                                        (INDEX 1)))""").strip()])
