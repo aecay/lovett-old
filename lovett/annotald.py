@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import sys
 import lovett.cs.transformer as TT
-import tree as T
+import lovett.tree_new as T
 import subprocess
 
 def flagIf(expr):
@@ -10,7 +10,8 @@ def flagIf(expr):
         trees = trees.split("\n\n")
         results = []
         for tree in trees:
-            trans = TT.TreeTransformer(T.ParentedTree.parse(tree))
+            print(tree)
+            trans = TT.TreeTransformer(T.parse(tree))
             trans.findNodes(expr)
             trans.changeLabel(lambda x: x + "-FLAG")
             results.append(trans.pt())
@@ -20,11 +21,11 @@ def flagIf(expr):
 
 def stdinValidator(path):
     def _stdinValidator(version, trees):
-        print "path is: " + path
+        print("path is: " + path)
         proc = subprocess.Popen(path,
-                                stdin = subprocess.PIPE,
-                                stdout = subprocess.PIPE)
-        out = proc.communicate(input = trees.encode('utf-8'))[0]
-        print "out is: " + out.decode('utf-8')
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+        out = proc.communicate(input=trees.encode('utf-8'))[0]
+        print("out is: " + out.decode('utf-8'))
         return out.decode('utf-8')
     return _stdinValidator
