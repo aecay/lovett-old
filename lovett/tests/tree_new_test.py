@@ -136,6 +136,10 @@ class RootTest(unittest.TestCase):
         self.assertEqual(hash(t), hash(t2))
         self.assertEqual(s, str(t2))
 
+    def test_bad_metadata(self):
+        md = "( (FOO (BAR baz)) (ID foobar-1) (METADATA (AUTHOR me)) (BAD metadata))"
+        self.assertRaises(TN.ParseError, TN.parse, md)
+
     def test_metadata_id(self):
         t = TN.parse("""( (IP (NP (D I)) (VBP love)
         (NP (NPR Python) (NPR programming)))(METADATA (AOO bar)
@@ -221,3 +225,6 @@ class LeafTest(unittest.TestCase):
                          (FOO (METADATA (ALT-ORTHO *T*)
                                         (IDX-TYPE regular)
                                         (INDEX 1)))""").strip()])
+    def test_mult_daughters(self):
+        anomalous = "(FOO (BAR baz quux))"
+        self.assertRaises(TN.ParseError, TN.parse, anomalous)
