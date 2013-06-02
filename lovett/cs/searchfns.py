@@ -274,18 +274,18 @@ def hasLeafLabel(label):
 
     """
     def _hasLeafLabel(t):
-        if len(t) == 1 and isinstance(t[0], str):
+        if isinstance(t, T.Leaf):
             if hasattr(label, "match"):
-                if label.match(t[0]):
+                if label.match(t.label):
                     return t
                 else:
                     return None
             else:
-                exact_match = label == t[0]
+                exact_match = label == t.label
                 if exact_match:
                     return t
                 else:
-                    if t[0][slice(len(label) + 1)] == label + "-":
+                    if t.label[slice(len(label) + 1)] == label + "-":
                         return t
                     else:
                         return None
@@ -699,10 +699,10 @@ def coIndexed(fn=identity):
 
     """
     def _coIndexed(t):
-        the_idx = util.indexOfTree(t)
+        the_idx = util.index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
                             x != t)
         c = list(c)
         c = filter(fn, c)
@@ -718,10 +718,10 @@ def hasCoIndexed(fn=identity):
 
     """
     def _hasCoIndexed(t):
-        the_idx = util.indexOfTree(t)
+        the_idx = util.index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
                             x != t)
         c = list(c)
         c = filter(fn, c)
@@ -743,10 +743,10 @@ def antecedent(fn=identity):
     """
     # TODO: test whether the target node is a trace
     def _antecedent(t):
-        the_idx = util.indexOfTree(t)
+        the_idx = util.index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
                             isinstance(x[0], T.Tree))
         c = list(c)
         if len(c) == 1:
@@ -769,10 +769,10 @@ def hasAntecedent(fn=identity):
 
     """
     def _hasAntecedent(t):
-        the_idx = util.indexOfTree(t)
+        the_idx = util.index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.indexOfTree(x) == the_idx and
+        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
                             isinstance(x[0], T.Tree))
         # Need to convert generator -> list to check length
         c = list(c)
