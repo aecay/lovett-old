@@ -23,7 +23,7 @@ class TreeTransformer:
     # TODO: add depth argument to allow restricting the depth of
     # searches and/or add "findFromRoot" which only calls the predicate
     # with the root node
-    def findNodes(self, fn = lambda x: x, deep = True):
+    def findNodes(self, fn=lambda x: x, deep=True):
         self._matches = []
         if deep:
             to_match = self._tree.subtrees
@@ -39,16 +39,16 @@ class TreeTransformer:
     # TODO: consolidate these
     def storeMatchData(self, fn):
         self._matchData = map(fn, self._matches)
+
     def queryMatches(self, fn):
         return map(fn, self._matches)
-
 
     # Should we remove this?  It is probably never necessary, except for
     # convenience, and it makes things complicated (can filter turn a
     # single match into a list?)  Update: Don't remove -- in tree
     # building, it is useful to move pointer -- but perhaps give a
     # better name
-    def filterMatches(self, fn = lambda x: x):
+    def filterMatches(self, fn=lambda x: x):
         new_matches = []
         new_match_data = []
         for m in range(len(self._matches)):
@@ -66,7 +66,7 @@ class TreeTransformer:
     # TODO: make sure that the modification functions are updateing
     # matches in a coherent way.  Ex. prune should empty matches.
 
-    def addParentNode(self, name, moveIndex = False):
+    def addParentNode(self, name, move_index=False):
         for m in self._matches:
             barf = lovett.tree.ParentedTree("BARF", [])
             t = self._tree
@@ -80,8 +80,8 @@ class TreeTransformer:
             t[pos] = new
         return self
 
-    def addParentNodeSpanning(self, name, fn, immediate = False, right = True,
-                              to_end = False):
+    def addParentNodeSpanning(self, name, fn, immediate=False, right=True,
+                              to_end=False):
         """Add a node over the matched node and some of its siblings.
 
         :param name: the name of the node to add
@@ -135,7 +135,7 @@ class TreeTransformer:
 
     # Instead of immediate -- another function extendOne?
     # also need more general movt fns.
-    def extendUntil(self, fn, immediate = False, right = True):
+    def extendUntil(self, fn, immediate=False, right=True):
         for m in self._matches:
             p = m
             acc = []
@@ -153,7 +153,7 @@ class TreeTransformer:
                             if right:
                                 m.append(a)
                             else:
-                                m.insert(0,a)
+                                m.insert(0, a)
                         done = True
                     if immediate:
                         done = True
@@ -161,7 +161,7 @@ class TreeTransformer:
                     done = True
         return self
 
-    def changeLabel(self, label = "XXX"):
+    def changeLabel(self, label="XXX"):
         if hasattr(label, "__call__"):
             for m in self._matches:
                 m.node = label(m.node)
@@ -170,8 +170,8 @@ class TreeTransformer:
                 m.node = label
         return self
 
-    def addSister(self, label = "XXX", word = "X-X", tree = None, before = True,
-                  coindex = False):
+    def addSister(self, label="XXX", word="X-X", tree=None, before=True,
+                  coindex=False):
         for m in self._matches:
             p = m.parent
             pi = m.parent_index
@@ -187,7 +187,7 @@ class TreeTransformer:
             p.insert(pi, to_insert)
         return self
 
-    def addDaughter(self, label = "XXX", word = "X-X", tree = None):
+    def addDaughter(self, label="XXX", word="X-X", tree=None):
         for m in self._matches:
             to_insert = tree or lovett.tree.ParentedTree(label, [word])
             m.insert(0, to_insert)
@@ -224,12 +224,10 @@ class TreeTransformer:
 
     def pt(self):
         # TODO: remove, replace with __unicode__
-        return unicode(self._tree)
+        return str(self._tree)
 
-    def __unicode__(self):
-        return unicode(self._tree)
     def __str__(self):
-        return str(unicode(self))
+        return str(self._tree)
 
 
 # TODO: what happens if we do ~daughters(...) ? Should not be
