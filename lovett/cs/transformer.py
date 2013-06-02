@@ -11,7 +11,7 @@ class TreeTransformer:
         # Do not mutate the tree we are given -- make a copy for our use.
         self._tree = copy.deepcopy(tree)
         self._matches = []
-        self._max_trace = lovett.util.getLargestIndex(self._tree)
+        self._max_trace = lovett.util.largest_index(self._tree)
 
     # remove me?
     def _testPos(self, p, fn):
@@ -74,9 +74,9 @@ class TreeTransformer:
             old = t[pos]
             t[pos] = barf
             new = lovett.tree.ParentedTree(name, [old])
-            if moveIndex:
-                index = lovett.util.removeIndexFromTree(old)
-                lovett.util.addIndexToTree(index, new)
+            if move_index:
+                index = lovett.util.remove_index(old)
+                lovett.util.set_index(new, index)
             t[pos] = new
         return self
 
@@ -179,8 +179,8 @@ class TreeTransformer:
             if coindex:
                 index = self._max_trace + 1
                 # TODO(?): a way to add gapping indices with = instead of -
-                lovett.util.addIndexToTree(index, m)
-                lovett.util.addIndexToTree(index, to_insert)
+                lovett.util.set_index(m, index)
+                lovett.util.set_index(to_insert, index)
                 self._max_trace = index
             if not before:
                 pi = pi + 1

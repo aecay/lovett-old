@@ -1,6 +1,7 @@
 import lovett.tree_new
 
 from functools import reduce
+import re
 
 ### Tree validation
 # TODO: this fn is untested
@@ -28,27 +29,72 @@ def validateTagset(tree, tags, dashes):
     pass
 
 ### Traces/movement indices
-def getLargestIndex(tree):
-    return reduce(max, map(indexOfTree, tree.subtrees))
+def _max_or_none(x, y):
+    if x is None and y is None:
+        return None
+    if y is None:
+        return x
+    if x is None:
+        return y
+    return max(x, y)
 
-def addIndexToTree(index, tree):
+def largest_index(tree):
+    return reduce(_max_or_none, map(index, tree.subtrees))
+
+def set_index(tree, index):
     tree.metadata['INDEX'] = index
 
-def indexOfTree(tree):
-    return tree.metadata.get('INDEX', 0)
+def index(tree):
+    return tree.metadata.get('INDEX', None)
 
+def index_type(tree):
+    return tree.metadata.get('IDX-TYPE', None)
 
-def removeIndexFromTree(tree):
-    del tree.metadata['INDEX']
-    del tree.metadata['IDX-TYPE']
+def remove_index(tree):
+    try:
+        del tree.metadata['INDEX']
+    except KeyError:
+        pass
+    try:
+        del tree.metadata['IDX-TYPE']
+    except KeyError:
+        pass
+
+def label_and_index(s):
+    l = s.split("=")
+    if len(l) > 1:
+        if l[-1].isdigit():
+            return "=".join(l[:-1]), "=", int(l[-1])
+    l = s.split("-")
+    if len(l) > 1:
+        if l[-1].isdigit():
+            return "-".join(l[:-1]), "-", int(l[-1])
+        else:
+            return s, None, None
+    else:
+        return s, None, None
+
+def index_from_string(s):
+    return label_and_index(s)[2]
+
+def index_type_from_string(s):
+    return label_and_index(s)[1]
 
 
 def isLeafNode(t):
+    # TODO: remove in favor of shorter name
     return isinstance(t, lovett.tree_new.Leaf)
 
+isLeaf = isLeafNode
 
 def isTrace(t):
-    return isLeafNode(t) and t.text in ["*T*", "*ICH*", "*CL*", "*"]
+    # TODO: the split below is a kludge; fix it
+    return isLeafNode(t) and \
+        t.text.split("-")[0] in ["*T*", "*ICH*", "*CL*", "*", "*con*"]
+
+def isEC(t):
+    # TODO: inexact
+    return isLeafNode(t) and (isTrace(t) or t.text == "0")
 
 def iter_flatten(iterable):
     it = iter(iterable)
@@ -109,7 +155,7 @@ def _unifyVersionTrees(old, new):
             old[k] = new[k]
     return old
 
-def metadata_str(dic, name, indent):
+def metadata_str(dic, name="METADATA", indent=0):
     r = "(" + name + " "
     l = len(r)
 
@@ -123,3 +169,7 @@ def metadata_str(dic, name, indent):
     )
     r += ")"
     return r
+
+def _shouldIndexLeaf(tree):
+    # TODO: split is a kludge, remove
+    return re.split("[-=]", tree.label)[0] in ["*T*", "*ICH*", "*CL*", "*"]
