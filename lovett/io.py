@@ -43,7 +43,6 @@ def writeTrees(metadata, trees, file):
 
     """
     if metadata:
-        file.write(lovett.util._dictToMetadata(metadata) + "\n\n")
-    if isinstance(trees[0], lovett.tree.LovettTree):
-        trees = map(str, trees)
-        file.write("\n\n".join(trees))
+        file.write(lovett.util.metadata_str(metadata) + "\n\n")
+    trees = map(str, trees)
+    file.write("\n\n".join(trees))

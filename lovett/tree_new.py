@@ -96,6 +96,10 @@ class Tree(collections.abc.Hashable):
             root = root.parent
         return root
 
+    @property
+    def urtext(self):
+        return " ".join([l.urtext for l in self])
+
 class Leaf(Tree):
     # TODO: implement dict interface passthrough to metadata?
     def __init__(self, label, text, metadata=None):
@@ -106,7 +110,10 @@ class Leaf(Tree):
     def __str__(self, indent=0):
         # TODO: handle metadata, lemma
         try:
-            v = self.corpus.version
+            # TODO: we want every child in the tree to be able to get its
+            # corpus, not just the root...how to manage? make this a property
+            # of Tree which returns self.root.corpus?
+            v = self.root.corpus.metadata['VERSION']
         except:
             v = "old-style"
 
@@ -123,16 +130,13 @@ class Leaf(Tree):
                 pass
             text = self.text
             if v == "dash":
-                try:
-                    if self.metadata['LEMMA'] is not None:
-                        text += '-' + self.metadata['LEMMA']
-                except KeyError:
-                    pass
-            if lovett.util.isTrace(self):
+                lemma = self.metadata.get('LEMMA', None)
+                if lemma is not None:
+                    text += '-' + lemma
+            if lovett.util._shouldIndexLeaf(self):
                 return ''.join(['(', self.label, ' ', text, idxstr, ')'])
             else:
                 return ''.join(['(', self.label, idxstr, ' ', text, ')'])
-
         elif v == "deep":
             return str(NonTerminal(self.label, [Leaf("ORTHO", self.text)],
                                    self.metadata))
@@ -145,6 +149,10 @@ class Leaf(Tree):
 
     def _key_tuple(self):
         return ("leaf", self.label, self.text, self.metadata)
+
+    @property
+    def urtext(self):
+        return self.text
 
 class NTCoder(object):
     def __init__(self, tree, corpus):
@@ -263,7 +271,11 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                               childstr, self.metadata)
 
     def __str__(self, indent=0):
-        s = "(%s " % self.label
+        s = "(%s" % self.label
+        idx = self.metadata.get('INDEX', None)
+        if idx is not None:
+            s += "-" + idx
+        s += " "
         l = len(s)
         leaves = ("\n" + " " * (indent + l)).join(
             map(lambda x: x.__str__(indent + l), self))
@@ -323,6 +335,10 @@ class Root(NonTerminal):
                              "(given: %s)", index)
         super(Root, self).__setitem__(index, value)
 
+    # @property
+    # def urtext(self):
+    #     return self.tree.urtext
+
 class ParseError(Exception):
     pass
 
@@ -364,7 +380,7 @@ def _list_to_dict(l):
     # print ("d: %s" % d)
     # return d
 
-def _postprocess_parsed(l):
+def _postprocess_parsed(l, version):
     # TODO: check format: deep vs old-style vs dash; act accordingly
     if not isinstance(l[0], str):
         # Root node
@@ -385,14 +401,33 @@ def _postprocess_parsed(l):
                     tree = v
         except IndexError:
             pass
-        return Root(id, _postprocess_parsed(tree), metadata)
+        return Root(id, _postprocess_parsed(tree, version), metadata)
     if len(l) < 2:
         raise ParseError("malformed tree: node has too few children")
     if isinstance(l[1], str):
         # Simple leaf
         if len(l) != 2:
             raise ParseError("malformed tree: leaf has too many children")
-        return Leaf(l[0], l[1])
+        m = {}
+        label = l[0]
+        text = l[1]
+        # TODO: move this check to a utility fn
+        if l[1].split("-")[0] in ["*T*", "*ICH*", "*CL*", "*"]:
+            text, idx_type, index = lovett.util.label_and_index(text)
+            if index is not None:
+                m['INDEX'] = index
+                m['IDX-TYPE'] = idx_type
+        else:
+            label, idx_type, index = lovett.util.label_and_index(label)
+            if index is not None:
+                m['INDEX'] = index
+                m['IDX-TYPE'] = idx_type
+        if version == "dash":
+            s = text.split("-")
+            if len(s) > 1:
+                m['LEMMA'] = s.pop()
+                text = "-".join(s)
+        return Leaf(label, text, m)
     if len(l) == 3 and sorted(map(lambda x: x[0], l[1:])) == ['METADATA',
                                                               'ORTHO']:
         # Deep format leaf
@@ -405,7 +440,15 @@ def _postprocess_parsed(l):
     m = next((x for x in l[1:] if x[0] == 'METADATA'), None)
     if m is not None:
         m = _list_to_dict(m[1:])
-    return NonTerminal(l[0], map(_postprocess_parsed, l[1:]), m)
+    else:
+        m = {}
+    label, idx_type, index = lovett.util.label_and_index(l[0])
+    if index is not None:
+        m['INDEX'] = index
+        m['IDX-TYPE'] = idx_type
+    return NonTerminal(label, map(lambda x: _postprocess_parsed(x, version),
+                                  l[1:]),
+                       m)
 
 # TODO: better parse errors
 def parse(string, version="old-style"):
@@ -431,4 +474,4 @@ def parse(string, version="old-style"):
     if not len(stack) == 0:
         raise ParseError("unmatched opening bracket")
 
-    return r and _postprocess_parsed(r)
+    return r and _postprocess_parsed(r, version)
