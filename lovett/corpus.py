@@ -33,18 +33,18 @@ class Corpus(collections.abc.MutableSequence):
     """
 
     # Constructors
-    def __init__(self, metadata, trees, version="old-style"):
+    def __init__(self, metadata, trees):
         """Create a corpus.
 
         :param metadata: metadata associated with this corpus
         :type metadata: dict
         :param trees: the trees in the corpus
-        :type trees: list of `LovettTree`
+        :type trees: list of `Root`
 
         """
         self.metadata = metadata or {}
-        self.trees = trees
-        self.version = version
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            self.trees = list(executor.map(lovett.tree_new.parse, trees))
         # TODO: read codes from corpussearch?
         self.coders = collections.OrderedDict()
 
@@ -54,15 +54,15 @@ class Corpus(collections.abc.MutableSequence):
     @classmethod
     def fromTrees(cls, trees, metadata=None, **kwargs):
         # TODO: potentially expensive...is this right?
-        return cls(metadata, copy.deepcopy(trees), **kwargs)
+        return cls(metadata, copy.deepcopy(trees))
 
     @classmethod
     def fromFile(cls, file, version="old-style"):
         # TODO: optimize
         with open(file) as f:
             trees = re.compile("\n\n+").split(f.read())
-        m = lovett.new_tree.parse(trees[0], version=version)
-        if m.label == "METADATA":
+        m = lovett.tree_new.parse(trees[0], version='old-style')
+        if m.tree.label == "VERSION":
             meta = lovett.util._treeToDict(m)
             return cls(meta, trees[1:])
         else:
@@ -75,9 +75,9 @@ class Corpus(collections.abc.MutableSequence):
         for file in files:
             with open(file) as f:
                 trees += re.compile("\n\n+").split(f.read())
-                # TODO: mutliple files with their metadata...
+        # TODO: mutliple files with their metadata...
         m = lovett.new_tree.parse(trees[0], version)
-        if m.label == "METADATA":
+        if m.tree.label == "VERSION":
             meta = lovett.util._treeToDict(m)
             return cls(meta, trees[1:])
         else:
@@ -116,7 +116,12 @@ class Corpus(collections.abc.MutableSequence):
         """
         if isinstance(fil, str):
             fil = open(fil, "w")
-        lovett.io.writeTrees(self.metadata, self.trees, fil)
+        fil.write("( " + lovett.util.metadata_str(self.metadata, "VERSION") +
+                  ")\n\n")
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            strs = executor.map(str, self.trees)
+        fil.write("\n\n".join(strs))
+        fil.close()
 
     def _mapTrees(self, fn):
         with concurrent.futures.ProcessPoolExecutor() as executor:
