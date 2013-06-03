@@ -7,37 +7,13 @@ import lovett.util
 
 TaggedWord = collections.namedtuple("TaggedWord", ['pos', 'word'])
 
-def _splitIndex(label):
-    s = label.split("=")
-    if len(s) == 2:
-        idx = s[1]
-        lab = s[0]
-        typ = "gap"
-    elif len(s) > 2:
-        raise ValueError("Too many equals signs in label: %s" % label)
-    else:
-        s = label.split("-")
-        idx = s.pop()
-        lab = "-".join(s)
-        typ = "regular"
-        if not idx.isdigit():
-            return label, None, None
-
-    try:
-        idx = int(idx)
-    except ValueError as e:
-        raise ValueError("non-numeric index: %s (%s)" % (s[1], e))
-    return lab, typ, idx
-
-
 class Tree(collections.abc.Hashable):
     # TODO: use __getattr__ to pass to metadata dict?
     def __init__(self, label, metadata=None):
         self.parent = None
         # TODO: we might want to parse metadata
         self.metadata = metadata or {}
-        # TODO: This should go in the parser
-        label, idxtype, idx = _splitIndex(label)
+        label, idxtype, idx = lovett.util.label_and_index(label)
         self._label = label
         if idx is not None:
             self.metadata['INDEX'] = idx
