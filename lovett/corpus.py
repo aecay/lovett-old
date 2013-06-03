@@ -8,6 +8,7 @@ import collections.abc
 import copy
 import re
 import concurrent.futures
+import itertools
 
 __docformat__ = "restructuredtext en"
 
@@ -43,8 +44,8 @@ class Corpus(collections.abc.MutableSequence):
 
         """
         self.metadata = metadata or {}
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            self.trees = list(executor.map(lovett.tree_new.parse, trees))
+        # TODO: we should not need that, but somehow blank (None) trees slip in
+        self.trees = list((t for t in trees if t))
         # TODO: read codes from corpussearch?
         self.coders = collections.OrderedDict()
 
@@ -52,36 +53,43 @@ class Corpus(collections.abc.MutableSequence):
             t.corpus = self
 
     @classmethod
-    def fromTrees(cls, trees, metadata=None, **kwargs):
+    def fromTrees(cls, trees, metadata=None):
         # TODO: potentially expensive...is this right?
         return cls(metadata, copy.deepcopy(trees))
 
     @classmethod
-    def fromFile(cls, file, version="old-style"):
+    def fromTreeStrings(cls, trees, metadata=None):
+        fmt = metadata.get('FORMAT') if metadata else 'old-style'
+        with concurrent.futures.ProcessPoolExecutor() as exc:
+            return cls(metadata, exc.map(lovett.tree_new.parse, trees,
+                                         itertools.repeat(fmt)))
+
+    @classmethod
+    def fromFile(cls, file, format="old-style"):
         # TODO: optimize
         with open(file) as f:
             trees = re.compile("\n\n+").split(f.read())
-        m = lovett.tree_new.parse(trees[0], version='old-style')
+        m = lovett.tree_new.parse(trees[0])
         if m.tree.label == "VERSION":
-            meta = lovett.util._treeToDict(m)
-            return cls(meta, trees[1:])
+            meta = lovett.util._treeToDict(m)['VERSION']
+            return cls.fromTreeStrings(trees[1:], meta)
         else:
-            return cls(None, trees)
+            return cls.fromTreeStrings(trees)
 
     @classmethod
-    def fromFiles(cls, files, version="old-style"):
+    def fromFiles(cls, files, format="old-style"):
         # TODO: optimize
-        trees = ""
+        trees = []
         for file in files:
             with open(file) as f:
-                trees += re.compile("\n\n+").split(f.read())
+                trees.extend(re.compile("\n\n+").split(f.read()))
         # TODO: mutliple files with their metadata...
-        m = lovett.new_tree.parse(trees[0], version)
+        m = lovett.tree_new.parse(trees[0])
         if m.tree.label == "VERSION":
             meta = lovett.util._treeToDict(m)
-            return cls(meta, trees[1:])
+            return cls.fromTreeStrings(trees[1:], meta)
         else:
-            return cls(None, trees)
+            return cls.fromTreeStrings(trees)
 
     # ABC methods
     def __contains__(self, arg):
@@ -123,9 +131,10 @@ class Corpus(collections.abc.MutableSequence):
         fil.write("\n\n".join(strs))
         fil.close()
 
-    def _mapTrees(self, fn):
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            self.trees = executor.map(fn, self.trees)
+    def _mapTrees(self, fn, *rest):
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        #     self.trees = list(executor.map(fn, self.trees, *rest))
+        self.trees = list(map(fn, self.trees, *rest))
 
     def addCoder(self, coder):
         self.coders[coder.name] = coder
@@ -133,3 +142,12 @@ class Corpus(collections.abc.MutableSequence):
     def addCoders(self, coders):
         for coder in coders:
             self.addCoder(coder)
+
+    @property
+    def words(self):
+        count = 0
+        for tree in self:
+            for leaf in tree.pos:
+                if lovett.util.is_word(leaf):
+                    count += 1
+        return count
