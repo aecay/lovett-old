@@ -164,10 +164,10 @@ class TreeTransformer:
     def changeLabel(self, label="XXX"):
         if hasattr(label, "__call__"):
             for m in self._matches:
-                m.node = label(m.node)
+                m.label = label(m.label)
         else:
             for m in self._matches:
-                m.node = label
+                m.label = label
         return self
 
     def addSister(self, label="XXX", word="X-X", tree=None, before=True,
