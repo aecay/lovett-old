@@ -265,7 +265,7 @@ def startsWith(string):
 # TODO: handle ignore
 # TODO: rename to hasText?
 @public
-def hasLeafLabel(label):
+def hasText(text):
     """Tests if a leaf node has the given text.
 
     No match is returned if the target node is not a leaf node.
@@ -278,27 +278,25 @@ def hasLeafLabel(label):
         trailing dash tags removed.
 
     """
-    def _hasLeafLabel(t):
+    def _hasText(t):
         if isinstance(t, T.Leaf):
-            if hasattr(label, "match"):
-                if label.match(t.label):
+            if hasattr(text, "match"):
+                if text.match(t.text):
                     return t
                 else:
                     return None
             else:
-                exact_match = label == t.label
+                exact_match = text == t.text
                 if exact_match:
                     return t
                 else:
-                    if t.label[slice(len(label) + 1)] == label + "-":
+                    if t.text[slice(len(text) + 1)] == text + "-":
                         return t
                     else:
                         return None
         else:
             return None
-    r = SearchFunction(_hasLeafLabel, label)
-    r.fn_str = "hasLeafLabel"
-    return r
+    return SearchFunction(_hasText, text)
 
 # default_ignore_function = hasLabel("CODE") | hasLabel("ID") # ...
 @public
