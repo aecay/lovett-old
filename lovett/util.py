@@ -148,6 +148,8 @@ def _treeToDict(t):
     """
     if isinstance(t, lovett.tree_new.Leaf):
         return t.text
+    elif isinstance(t, lovett.tree_new.Root):
+        return _treeToDict(t.tree)
     else:
         return dict([(n.label, _treeToDict(n)) for n in t])
 
