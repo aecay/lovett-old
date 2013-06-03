@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import collections
 import collections.abc
+import copy
 
 import lovett.util
 
@@ -252,17 +253,29 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         except:
             v = "old-style"
         s = "(%s" % self.label
-        idx = self.metadata.get('INDEX', None)
-        if idx is not None:
-            s += "-" + idx
+        m = copy.deepcopy(self.metadata)
+        if v in ['old-style', 'dash']:
+            idx = lovett.util.index(self)
+            if idx is not None:
+                s += lovett.util.index_type_short(self) + str(idx)
+            # TODO: very kludgey, maybe make metadata_str handle these
+            # exculsions automatically
+            try:
+                del m['INDEX']
+            except KeyError:
+                pass
+            try:
+                del m['IDX-TYPE']
+            except KeyError:
+                pass
         s += " "
         l = len(s)
         leaves = ("\n" + " " * (indent + l)).join(
             map(lambda x: x.__str__(indent + l), self))
         metadata = ""
-        if self.metadata != {}:
+        if m != {}:
             metadata = "\n" + " " * (indent + l) + \
-                       lovett.util.metadata_str(self.metadata,
+                       lovett.util.metadata_str(m,
                                                 "METADATA",
                                                 indent + l)
         return "".join([s, leaves, metadata, ")"])
