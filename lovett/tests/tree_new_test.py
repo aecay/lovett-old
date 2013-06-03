@@ -8,16 +8,6 @@ from lovett.tree_new import NonTerminal as NT
 from lovett.tree_new import Leaf as L
 
 class UtilFnsTest(unittest.TestCase):
-    def test_splitIndex(self):
-        self.assertEqual(TN._splitIndex("NP-1"),
-                         ("NP", "regular", 1))
-        self.assertEqual(TN._splitIndex("NP-FOO-1"),
-                         ("NP-FOO", "regular", 1))
-        self.assertEqual(TN._splitIndex("NP=1"),
-                         ("NP", "gap", 1))
-        self.assertIsNone(TN._splitIndex("NP")[1])
-        self.assertIsNone(TN._splitIndex("NP")[2])
-        self.assertRaises(ValueError, lambda: TN._splitIndex("NP=FOO=BAR"))
 
     def test_parse(self):
         self.assertIsNone(TN.parse(""))
@@ -58,6 +48,10 @@ class TreeTest(unittest.TestCase):
         l = L("a", "b")
         t = NT("foo",[NT("bar", [l])])
         self.assertIs(l.root, t)
+
+    def test_str_indices(self):
+        t = TN.parse("( (IP=1 (FOO bar)))")
+        self.assertEqual(str(t), "( (IP=1 (FOO bar)))")
 
 class RootTest(unittest.TestCase):
     def test_parse_1(self):

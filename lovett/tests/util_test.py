@@ -26,26 +26,34 @@ class UtilTest(unittest.TestCase):
             "( (FOO (FOO bar) (BAZ (QUUX 1) (BLORFLE 2))))")
         self.assertIsNone(lovett.util._parseVersionTree(t))
 
-    def test_get_index_from_string(self):
+    def test_label_and_index(self):
         li = lovett.util.label_and_index
-        self.assertEqual(li("FOO-1"), ("FOO", "-", 1))
-        self.assertEqual(li("FOO=1"), ("FOO", "=", 1))
-        self.assertEqual(li("FOO-BAR-1"), ("FOO-BAR", "-", 1))
-        self.assertEqual(li("FOO-BAR=1"), ("FOO-BAR", "=", 1))
-        self.assertEqual(li("FOO-123"), ("FOO", '-', 123))
-        self.assertEqual(li("FOO=BAR-1"), ("FOO=BAR", "-", 1))
+        self.assertEqual(li("FOO-1"), ("FOO", "regular", 1))
+        self.assertEqual(li("FOO=1"), ("FOO", "gap", 1))
+        self.assertEqual(li("FOO-BAR-1"), ("FOO-BAR", "regular", 1))
+        self.assertEqual(li("FOO-BAR=1"), ("FOO-BAR", "gap", 1))
+        self.assertEqual(li("FOO-123"), ("FOO", 'regular', 123))
+        self.assertEqual(li("FOO=BAR-1"), ("FOO=BAR", "regular", 1))
+        self.assertEqual(li("NP-1"), ("NP", "regular", 1))
+        self.assertEqual(li("NP-FOO-1"), ("NP-FOO", "regular", 1))
+        self.assertEqual(li("NP=1"), ("NP", "gap", 1))
+        self.assertIsNone(li("NP")[1])
+        self.assertIsNone(li("NP")[2])
+        self.assertRaises(ValueError, li, "NP=FOO=BAR")
 
     def test_index(self):
-        cases = [("(NP-1 (D foo))", 1, "-"),
-                 ("(NP *T*-1)", 1, "-"),
-                 ("(XP *ICH*-3)", 3, "-"),
-                 ("(XP *-34)", 34, "-"),
-                 ("(XP *CL*-1)", 1, "-"),
-                 ("(XP=4 (X foo))", 4, "="),
-                 ("(XP *FOO*-1)", None, None),
-                 ("(NP (D foo))", None, None)]
-        for (s, i, t) in cases:
+        cases = [("(NP-1 (D foo))", 1, "-", 'regular'),
+                 ("(NP *T*-1)", 1, "-", 'regular'),
+                 ("(XP *ICH*-3)", 3, "-", 'regular'),
+                 ("(XP *-34)", 34, "-", 'regular'),
+                 ("(XP *CL*-1)", 1, "-", 'regular'),
+                 ("(XP=4 (X foo))", 4, "=", 'gap'),
+                 ("(XP *FOO*-1)", None, None, None),
+                 ("(NP (D foo))", None, None, None)]
+        for (s, i, ts, t) in cases:
             self.assertEqual(lovett.util.index(lovett.tree_new.parse(s)), i)
+            self.assertEqual(lovett.util.index_type_short(
+                lovett.tree_new.parse(s)), ts)
             self.assertEqual(lovett.util.index_type(lovett.tree_new.parse(s)),
                              t)
 

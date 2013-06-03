@@ -3,9 +3,9 @@ from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
 import lovett.tree_new as T
+import re
 
-def leaf(label, word):
-    return T.Leaf(label, word)
+leaf = T.Leaf
 
 LT = T.parse
 
@@ -78,9 +78,20 @@ class TestSearchFns(unittest.TestCase):
                                              leaf("D", "the"),
                                              leaf("N", "apple")])
 
-
+    def test_hasLemma(self):
+        t = T.parse("( (IP (NP-SBJ (D I-i)) (BEP am-be) (PP (P in-in) (ADV here-here))))", "dash")
+        tt = TreeTransformer(t)
+        tt.findNodes(hasLemma("i"))
+        self.assertEqual(tt.matches(), [leaf("D", "I", {'LEMMA': 'i'})])
+        tt.findNodes(hasLemma(re.compile("^i.*")))
+        self.assertEqual(tt.matches(), [leaf("D", "I", {'LEMMA': 'i'}),
+                                        leaf("P", "in", {'LEMMA': 'in'})])
+        tt.findNodes(~hasLemma("i"))
+        self.assertNotIn(leaf("D", "I", {'LEMMA': 'i'}), tt.matches())
+        self.assertGreater(len(tt.matches()), 0)
     # TODO: test hasLemma, other fns
 
+    # TODO: test and, or, etc
     def test_str(self):
         def is_search_fn(x):
             if hasattr(x, "__call__"):
