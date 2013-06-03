@@ -2,20 +2,30 @@ from __future__ import unicode_literals
 import sys
 import lovett.cs.transformer as TT
 import lovett.tree_new as T
+import lovett.corpus
 import subprocess
+import itertools
+import lovett.cs.searchfns
+
+def _flagIfHelper(tree, expr):
+    trans = TT.TreeTransformer(tree)
+    trans.findNodes(lovett.cs.searchfns.isLeaf())
+    # for m in trans.matches():
+    #     print(m.metadata)
+    trans.findNodes(expr)
+    trans.changeLabel(lambda x: x + "-FLAG")
+    return trans._tree
 
 def flagIf(expr):
     def _flagIfInner(version, trees):
+        print(version)
         trees = trees.replace("-FLAG", "")
         trees = trees.split("\n\n")
-        results = []
-        for tree in trees:
-            print(tree)
-            trans = TT.TreeTransformer(T.parse(tree))
-            trans.findNodes(expr)
-            trans.changeLabel(lambda x: x + "-FLAG")
-            results.append(trans.pt())
-        return '\n\n'.join(results)
+        corpus = lovett.corpus.Corpus.fromTreeStrings(trees, version)
+        corpus._mapTrees(_flagIfHelper, itertools.repeat(expr))
+        print(str(corpus.trees[2]))
+        r = '\n\n'.join(map(str, corpus.trees))
+        return r
     return _flagIfInner
 
 
