@@ -33,11 +33,12 @@ class SearchFunction:
     TODO: calling and return conventions for such a function
 
     """
-    def __init__(self, fn, arg=""):
+    def __init__(self, fn, arg="", full_str=None):
         self.fn = fn
         fn_str = fn.__name__[1:]
         self.fn_str = fn_str
         self.arg = arg
+        self.full_str = full_str
 
     # is this the place to put the ignore logic?
     def __call__(self, arg):
@@ -66,7 +67,8 @@ class SearchFunction:
                 return res
             else:
                 return other(t)
-        return SearchFunction(_and, "%s & %s" % (str(self), str(other)))
+        return SearchFunction(_and,
+                              full_str="%s & %s" % (str(self), str(other)))
 
     def __or__(self, other):
         def _or(t):
@@ -75,7 +77,8 @@ class SearchFunction:
                 return res
             else:
                 return other(t)
-        return SearchFunction(_or, "%s | %s" % (str(self), str(other)))
+        return SearchFunction(_or,
+                              full_str="%s | %s" % (str(self), str(other)))
 
     def __invert__(self):
         def _not(t):
@@ -84,9 +87,11 @@ class SearchFunction:
             else:
                 return t
             return _not
-        return SearchFunction(_not, "~%s" % str(self))
+        return SearchFunction(_not, full_str="~%s" % str(self))
 
     def __str__(self):
+        if self.full_str is not None:
+            return self.full_str
         return "%s(%s)" % (self.fn_str, _get_arg_string(self.arg))
 
 # TODO: add below methods to (subclass of) ParentedTree?
