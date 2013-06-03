@@ -307,14 +307,24 @@ def hasLemma(lemma):
         a string (the latter is matched exactly against the lemma).
 
     """
-    if hasattr(lemma, "pattern"):
-        lemma = lemma.pattern
-    else:
-        lemma = re.escape(lemma)
-    r = hasLeafLabel(re.compile("^.*-(" + lemma + ")$"))
-    r.fn_str = "hasLemma"
-    r.arg = lemma
-    return r
+    def _hasLemma(t):
+        if not isinstance(t, T.Leaf):
+            return None
+        try:
+            the_lemma = t.metadata['LEMMA']
+        except KeyError:
+            return None
+        if hasattr(lemma, "match"):
+            if lemma.match(the_lemma):
+                return t
+            else:
+                return None
+        else:
+            if the_lemma == lemma:
+                return t
+            else:
+                return None
+    return SearchFunction(_hasLemma, lemma)
 
 # TODO: make aware of different formats (deep, dash)
 # is this redundant with hasLeafLabel?  Should this be called hasText?
