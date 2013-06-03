@@ -5,7 +5,6 @@ import collections.abc
 
 import lovett.util
 
-TaggedWord = collections.namedtuple("TaggedWord", ['pos', 'word'])
 
 class Tree(collections.abc.Hashable):
     # TODO: use __getattr__ to pass to metadata dict?
@@ -230,9 +229,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
     @property
     def pos(self):
-        # TODO: do we need this?
-        yield from (TaggedWord(x.label, x.text)
-                    for x in self if isinstance(x, Leaf))
+        yield from (x for x in self.subtrees if isinstance(x, Leaf))
 
     @property
     def code(self):
