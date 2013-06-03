@@ -394,7 +394,11 @@ def _postprocess_parsed(l, format):
                     tree = v
         except IndexError:
             pass
-        return Root(id, _postprocess_parsed(tree, version), metadata)
+        try:
+            return Root(id, _postprocess_parsed(tree, format), metadata)
+        except ParseError as e:
+            print("error in id: %s" % id)
+            raise e
     if len(l) < 2:
         raise ParseError("malformed tree: node has too few children")
     if isinstance(l[1], str):
@@ -459,7 +463,10 @@ def parse(string, format="old-style"):
                 # the final closing bracket
                 break
         else:
-            stack[len(stack) - 1].append(token)
+            try:
+                stack[len(stack) - 1].append(token)
+            except Exception:
+                raise ParseError("error with stack: %s" % stack)
 
     n = next(stream, None)
     if n is not None:
