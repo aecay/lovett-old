@@ -50,6 +50,15 @@ def index(tree):
 def index_type(tree):
     return tree.metadata.get('IDX-TYPE', None)
 
+def index_type_short(tree):
+    it = index_type(tree)
+    if it == "gap":
+        return "="
+    elif it == "regular":
+        return "-"
+    else:
+        return None
+
 def remove_index(tree):
     try:
         del tree.metadata['INDEX']
@@ -62,13 +71,15 @@ def remove_index(tree):
 
 def label_and_index(s):
     l = s.split("=")
+    if len(l) > 2:
+        raise ValueError("too many = signs in label: %s" % s)
     if len(l) > 1:
         if l[-1].isdigit():
-            return "=".join(l[:-1]), "=", int(l[-1])
+            return "=".join(l[:-1]), "gap", int(l[-1])
     l = s.split("-")
     if len(l) > 1:
         if l[-1].isdigit():
-            return "-".join(l[:-1]), "-", int(l[-1])
+            return "-".join(l[:-1]), "regular", int(l[-1])
         else:
             return s, None, None
     else:
