@@ -89,7 +89,7 @@ class Leaf(Tree):
             # TODO: we want every child in the tree to be able to get its
             # corpus, not just the root...how to manage? make this a property
             # of Tree which returns self.root.corpus?
-            v = self.root.corpus.metadata['VERSION']
+            v = self.root.corpus.metadata['FORMAT']
         except:
             v = "old-style"
 
@@ -117,7 +117,7 @@ class Leaf(Tree):
             return str(NonTerminal(self.label, [Leaf("ORTHO", self.text)],
                                    self.metadata))
         else:
-            raise ValueError("unknown corpus version: %s" % v)
+            raise ValueError("unknown corpus format: %s" % v)
 
     def __repr__(self):
         return "Leaf(%s, %s, metadata=%r)" % (self.label, self.text,
@@ -247,6 +247,13 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                               childstr, self.metadata)
 
     def __str__(self, indent=0):
+        try:
+            # TODO: we want every child in the tree to be able to get its
+            # corpus, not just the root...how to manage? make this a property
+            # of Tree which returns self.root.corpus?
+            v = self.root.corpus.metadata['FORMAT']
+        except:
+            v = "old-style"
         s = "(%s" % self.label
         idx = self.metadata.get('INDEX', None)
         if idx is not None:
@@ -356,7 +363,7 @@ def _list_to_dict(l):
     # print ("d: %s" % d)
     # return d
 
-def _postprocess_parsed(l, version):
+def _postprocess_parsed(l, format):
     # TODO: check format: deep vs old-style vs dash; act accordingly
     if not isinstance(l[0], str):
         # Root node
@@ -398,7 +405,7 @@ def _postprocess_parsed(l, version):
             if index is not None:
                 m['INDEX'] = index
                 m['IDX-TYPE'] = idx_type
-        if version == "dash":
+        if format == "dash":
             s = text.split("-")
             if len(s) > 1:
                 m['LEMMA'] = s.pop()
@@ -422,12 +429,12 @@ def _postprocess_parsed(l, version):
     if index is not None:
         m['INDEX'] = index
         m['IDX-TYPE'] = idx_type
-    return NonTerminal(label, map(lambda x: _postprocess_parsed(x, version),
+    return NonTerminal(label, map(lambda x: _postprocess_parsed(x, format),
                                   l[1:]),
                        m)
 
 # TODO: better parse errors
-def parse(string, version="old-style"):
+def parse(string, format="old-style"):
     stack = []
     stream = _tokenize(string)
     r = None
@@ -450,4 +457,4 @@ def parse(string, version="old-style"):
     if not len(stack) == 0:
         raise ParseError("unmatched opening bracket")
 
-    return r and _postprocess_parsed(r, version)
+    return r and _postprocess_parsed(r, format)
