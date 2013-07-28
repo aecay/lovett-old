@@ -52,6 +52,10 @@ class TreeTest(unittest.TestCase):
     def test_str_indices(self):
         t = TN.parse("( (IP=1 (FOO bar)))")
         self.assertEqual(str(t), "( (IP=1 (FOO bar)))")
+        t = TN.parse("( (IP (NP-SBJ *T*-1)))")
+        self.assertEqual(str(t), "( (IP (NP-SBJ *T*-1)))")
+        t = TN.parse("( (IP=1 foo))")
+        self.assertEqual(str(t), "( (IP=1 foo))")
 
 class RootTest(unittest.TestCase):
     def test_parse_1(self):
