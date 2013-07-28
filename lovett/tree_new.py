@@ -425,7 +425,8 @@ def _postprocess_parsed(l, format):
             if index is not None:
                 m['INDEX'] = index
                 m['IDX-TYPE'] = idx_type
-        if format == "dash":
+        if format == "dash" and not (label.startswith("CODE") or
+                                     label.startswith("CODING")):
             s = text.split("-")
             if len(s) > 1:
                 m['LEMMA'] = s.pop()
