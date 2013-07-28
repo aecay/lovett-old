@@ -131,6 +131,10 @@ class Leaf(Tree):
 
     @property
     def urtext(self):
+        # TODO: more excluded node types
+        # TODO: put punctuation back with previous text?
+        if lovett.util.isEC(self) or self.label in ["CODE", "CODING"]:
+            return ""
         return self.text
 
     @property
