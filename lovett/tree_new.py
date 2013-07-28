@@ -106,6 +106,8 @@ class Leaf(Tree):
                 pass
             text = self.text
             if v == "dash":
+                # TODO: need to do this conversion coming in as well
+                text = text.replace("-", "<dash>")
                 lemma = self.metadata.get('LEMMA', None)
                 if lemma is not None:
                     text += '-' + lemma
