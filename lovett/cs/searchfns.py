@@ -391,9 +391,7 @@ def daughters(fn=identity):
 
     """
     def _daughters(t):
-        print(t)
         if not hasattr(t, '__iter__'):
-            print("ret: " % fn(t))
             return fn(t)
         else:
             vals = [fn(d) for d in allDaughters(t)]
