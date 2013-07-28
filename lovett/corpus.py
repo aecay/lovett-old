@@ -126,8 +126,8 @@ class Corpus(collections.abc.MutableSequence):
             fil = open(fil, "w")
         fil.write("( " + lovett.util.metadata_str(self.metadata, "VERSION") +
                   ")\n\n")
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            strs = executor.map(str, self.trees)
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        strs = map(str, self.trees)
         fil.write("\n\n".join(strs))
         fil.close()
 
