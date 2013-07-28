@@ -9,9 +9,15 @@ import lovett.util
 class TreeTransformer:
     def __init__(self, tree):
         # Do not mutate the tree we are given -- make a copy for our use.
-        self._tree = copy.deepcopy(tree)
+        self._tree = tree
         self._matches = []
         self._max_trace = lovett.util.largest_index(self._tree)
+        self._made_copy = False
+
+    def _mutate(self):
+        if not self._made_copy:
+            self._tree = copy.deepcopy(self.tree)
+            self._made_copy = True
 
     # remove me?
     def _testPos(self, p, fn):
@@ -67,6 +73,7 @@ class TreeTransformer:
     # matches in a coherent way.  Ex. prune should empty matches.
 
     def addParentNode(self, name, move_index=False):
+        self._mutate()
         for m in self._matches:
             barf = lovett.tree.ParentedTree("BARF", [])
             t = self._tree
@@ -105,6 +112,8 @@ class TreeTransformer:
         # DONE: actually, we have to do each transformation as we find
         # it.  Otherwise, we will do weird things if we have ex. N N ADJ
         # and we try to extend NP over N...ADJ.
+
+        self._mutate()
 
         barf = lovett.tree.ParentedTree("BARF", [])
         t = self._tree
@@ -162,6 +171,7 @@ class TreeTransformer:
         return self
 
     def changeLabel(self, label="XXX"):
+        self._mutate()
         if hasattr(label, "__call__"):
             for m in self._matches:
                 m.label = label(m.label)
@@ -172,6 +182,7 @@ class TreeTransformer:
 
     def addSister(self, label="XXX", word="X-X", tree=None, before=True,
                   coindex=False):
+        self._mutate()
         for m in self._matches:
             p = m.parent
             pi = m.parent_index
@@ -188,6 +199,7 @@ class TreeTransformer:
         return self
 
     def addDaughter(self, label="XXX", word="X-X", tree=None):
+        self._mutate()
         for m in self._matches:
             to_insert = tree or lovett.tree.ParentedTree(label, [word])
             m.insert(0, to_insert)
@@ -196,6 +208,7 @@ class TreeTransformer:
 # TODO: add a coindex function, operating on a dual selection
 
     def prune(self):
+        self._mutate()
         for m in self._matches:
             p = m.parent
             pi = m.parent_index + 1
