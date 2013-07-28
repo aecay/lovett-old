@@ -915,6 +915,20 @@ def sharesLabelWithMod(fn=identity, all=False, comparator=operator.eq):
                           '%s, all="%s", comparator="%s"' %
                           (fn, all, comparator))
 
+@public
+def domsWords(n):
+    # TODO: doc
+    def _domsWords(t):
+        wds = 0
+        for x in t.pos:
+            if util.is_word(x):
+                wds += 1
+        if wds == n:
+            return t
+        else:
+            return None
+    return SearchFunction(_domsWords, str(n))
+
 
 # Function modifiers
 
