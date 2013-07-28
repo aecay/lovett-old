@@ -187,7 +187,7 @@ def metadata_str(dic, name="METADATA", indent=0):
 
 def _shouldIndexLeaf(tree):
     # TODO: split is a kludge, remove
-    return re.split("[-=]", tree.label)[0] in ["*T*", "*ICH*", "*CL*", "*"]
+    return re.split("[-=]", tree.text)[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
 def is_word(tree):
     if tree.label in ["CODE", ".", ",", "FW"]:
