@@ -90,6 +90,7 @@ class Leaf(Tree):
             # corpus, not just the root...how to manage? make this a property
             # of Tree which returns self.root.corpus?
             v = self.root.corpus.metadata['FORMAT']
+            # TODO: replace with .get(). hurf durf.
         except:
             v = "old-style"
 
