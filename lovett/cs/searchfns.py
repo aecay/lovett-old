@@ -224,11 +224,7 @@ def hasLabel(label, exact=False):
 
     """
     def _hasLabel(t):
-        to_match = ""
-        if isinstance(t, T.Tree):
-            to_match = t.label
-        else:
-            return None
+        to_match = t.label
 
         if hasattr(label, "match"):
             if label.match(to_match):
@@ -237,18 +233,12 @@ def hasLabel(label, exact=False):
                 return None
         else:
             exact_match = label == to_match
-            if exact:
-                if exact_match:
-                    return t
-                else:
-                    return None
+            if exact_match:
+                return t
+            elif not exact and to_match.startswith(label + "-"):
+                return t
             else:
-                # TODO: gapping indices with =
-                if exact_match or \
-                   to_match[slice(len(label) + 1)] == label + "-":
-                    return t
-                else:
-                    return None
+                return None
     return SearchFunction(_hasLabel, label)
 
 class StartsWith:
