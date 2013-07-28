@@ -189,9 +189,9 @@ def _shouldIndexLeaf(tree):
     # TODO: split is a kludge, remove
     return re.split("[-=]", tree.text)[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
+def is_leaf(tree):
+    return isinstance(tree, lovett.tree_new.Leaf)
+
 def is_word(tree):
-    if tree.label in ["CODE", ".", ",", "FW"]:
-        return False
-    if tree.text[0] in ["*", "@"]:
-        return False
-    return True
+    return (is_leaf(tree)) and (not isEC(tree)) and \
+        tree.label not in ["CODE", ".", ",", "FW"]
