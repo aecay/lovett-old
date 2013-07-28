@@ -101,7 +101,7 @@ isLeaf = isLeafNode
 def isTrace(t):
     # TODO: the split below is a kludge; fix it
     return isLeafNode(t) and \
-        t.text.split("-")[0] in ["*T*", "*ICH*", "*CL*", "*", "*con*"]
+        t.text.split("-")[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
 def isEC(t):
     # TODO: inexact
@@ -184,10 +184,6 @@ def metadata_str(dic, name="METADATA", indent=0):
     )
     r += ")"
     return r
-
-def _shouldIndexLeaf(tree):
-    # TODO: split is a kludge, remove
-    return re.split("[-=]", tree.text)[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
 def is_leaf(tree):
     return isinstance(tree, lovett.tree_new.Leaf)

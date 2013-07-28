@@ -112,7 +112,7 @@ class Leaf(Tree):
                 lemma = self.metadata.get('LEMMA', None)
                 if lemma is not None:
                     text += '-' + lemma
-            if lovett.util._shouldIndexLeaf(self):
+            if lovett.util.isTrace(self):
                 return ''.join(['(', self.label, ' ', text, idxstr, ')'])
             else:
                 return ''.join(['(', self.label, idxstr, ' ', text, ')'])
