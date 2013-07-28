@@ -105,7 +105,9 @@ def isTrace(t):
 
 def isEC(t):
     # TODO: inexact
-    return isLeafNode(t) and (isTrace(t) or t.text == "0")
+    # TODO: how can an empty text happen?!
+    return isLeafNode(t) and (t.text == "0" or t.text == "" or
+                              t.text[0] == "*")
 
 def iter_flatten(iterable):
     it = iter(iterable)
