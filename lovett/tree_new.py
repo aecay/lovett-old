@@ -132,6 +132,10 @@ class Leaf(Tree):
     def urtext(self):
         return self.text
 
+    @property
+    def pos(self):
+        yield self
+
 class NTCoder(object):
     def __init__(self, tree, corpus):
         self.tree = tree
