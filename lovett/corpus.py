@@ -71,7 +71,7 @@ class Corpus(collections.abc.MutableSequence):
             trees = re.compile("\n\n+").split(f.read())
         m = lovett.tree_new.parse(trees[0])
         if m.tree.label == "VERSION":
-            meta = lovett.util._treeToDict(m)['VERSION']
+            meta = lovett.util._treeToDict(m)
             return cls.fromTreeStrings(trees[1:], meta)
         else:
             return cls.fromTreeStrings(trees)
