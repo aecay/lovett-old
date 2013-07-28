@@ -101,7 +101,7 @@ class Leaf(Tree):
                         idxstr = '='
                     else:
                         idxstr = '-'
-                        idxstr += str(self.metadata['INDEX'])
+                    idxstr += str(self.metadata['INDEX'])
             except:
                 pass
             text = self.text
