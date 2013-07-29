@@ -114,7 +114,9 @@ class Leaf(Tree):
             text = self.text
             if v == "dash":
                 # TODO: need to do this conversion coming in as well
-                text = text.replace("-", "<dash>")
+                # TODO: the code node check below may not be working
+                if not lovett.util.is_code_node(self):
+                    text = text.replace("-", "<dash>")
                 lemma = self.metadata.get('LEMMA', None)
                 if lemma is not None:
                     text += '-' + lemma
