@@ -805,7 +805,7 @@ def isGapped():
 
     """
     def _isGapped(t):
-        if "=" in t.node:
+        if t.metadata.get('IDX-TYPE', None) == "gap":
             return t
         else:
             return None
@@ -815,21 +815,10 @@ def isGapped():
 def isIndexed():
     """Tests whether a node has a numerical index, of any variety."""
     def _isIndexed(t):
-        if util.isTrace(t):
-            try:
-                int(t[0].split("-")[-1])
-                return t
-            except ValueError:
-                return None
+        if 'INDEX' in t.metadata:
+            return t
         else:
-            if isGapped(t):
-                return t
-            else:
-                try:
-                    int(t.node.split("-")[-1])
-                    return t
-                except ValueError:
-                    return None
+            return None
     return SearchFunction(_isIndexed, "")
 
 @public
