@@ -15,9 +15,11 @@ class TreeTransformer:
         self._made_copy = False
 
     def _mutate(self):
-        if not self._made_copy:
-            self._tree = copy.deepcopy(self.tree)
-            self._made_copy = True
+        pass
+    # TODO: worry about this
+        # if not self._made_copy:
+        #     self._tree = copy.deepcopy(self.tree())
+        #     self._made_copy = True
 
     # remove me?
     def _testPos(self, p, fn):
