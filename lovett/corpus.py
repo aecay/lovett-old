@@ -132,6 +132,11 @@ class Corpus(collections.abc.MutableSequence):
         fil.write("\n\n".join(strs))
         fil.close()
 
+    def treeStrings(self):
+        # TODO: is this method needed? maybe a None file arg to write?
+        strs = map(str, self.trees)
+        return "\n\n".join(strs)
+
     def _mapTrees(self, fn, *rest):
         # with concurrent.futures.ProcessPoolExecutor() as executor:
         #     self.trees = list(executor.map(fn, self.trees, *rest))
