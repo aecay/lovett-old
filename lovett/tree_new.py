@@ -74,7 +74,13 @@ class Tree(collections.abc.Hashable):
 
     @property
     def urtext(self):
-        return " ".join([l.urtext for l in self])
+        r = " ".join(filter(lambda s: s != "", [l.urtext for l in self]))
+        r = r.replace("@ @", "")
+        # Hacktacularly delete spaces before punctuation
+        r = r.replace(" LOVETT_DEL_SP", "")
+        # Also zap space-delete markers at the beginning of the string
+        r = r.replace("LOVETT_DEL_SP", "")
+        return r.strip()
 
 class Leaf(Tree):
     # TODO: implement dict interface passthrough to metadata?
@@ -132,9 +138,13 @@ class Leaf(Tree):
     @property
     def urtext(self):
         # TODO: more excluded node types
-        # TODO: put punctuation back with previous text?
-        if lovett.util.isEC(self) or self.label in ["CODE", "CODING"]:
+        if lovett.util.isEC(self) or self.label == "CODE" or \
+           self.label.startswith("CODING"):
             return ""
+        if self.label in [",", "."]:
+            # Punctuation: no spaces
+            # TODO: grossly hacktacular!
+            return "LOVETT_DEL_SP" + self.text
         return self.text
 
     @property
