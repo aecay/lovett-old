@@ -191,3 +191,6 @@ def is_leaf(tree):
 def is_word(tree):
     return (is_leaf(tree)) and (not isEC(tree)) and \
         tree.label not in ["CODE", ".", ",", "FW"]
+
+def is_code_node(tree):
+    return tree.label == "CODE"
