@@ -52,6 +52,7 @@ class Corpus(collections.abc.MutableSequence):
         for t in self.trees:
             t.corpus = self
 
+    # TODO: make these module methods, not class methods
     @classmethod
     def fromTrees(cls, trees, metadata=None):
         # TODO: potentially expensive...is this right?
@@ -119,7 +120,7 @@ class Corpus(collections.abc.MutableSequence):
 
         :param fil: a file object to write to, or the name of a
         file to open for writing
-        :type fil: string of ``file`` object
+        :type fil: string or ``file`` object
 
         """
         if isinstance(fil, str):
