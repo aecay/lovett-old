@@ -226,3 +226,8 @@ class LeafTest(unittest.TestCase):
     def test_mult_daughters(self):
         anomalous = "(FOO (BAR baz quux))"
         self.assertRaises(TN.ParseError, TN.parse, anomalous)
+
+    def test_urtext(self):
+        # TODO: woefully incomplete
+        tree = "( (IP-MAT (X *T*) (X FOO) (X *con*) (XP (X bar) (X BAZ) (. .)) (CODE dddd)))"
+        self.assertEqual(TN.parse(tree).urtext, "FOO bar BAZ.")
