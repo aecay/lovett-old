@@ -12,3 +12,4 @@ htmlcov/
 # distribution-related things
 MANIFEST
 dist/
+lovett.egg-info/
