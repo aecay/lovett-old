@@ -86,7 +86,6 @@ class SearchFunction:
                 return None
             else:
                 return t
-            return _not
         return SearchFunction(_not, full_str="~%s" % str(self))
 
     def __str__(self):
@@ -963,11 +962,6 @@ def ignoring(ignore_fn, fn):
 # TODO: don't export these below
 
 # Boolean operations as language keywords is dumb
-def functionalSSOr(x, y):
-    if x:
-        return x
-    else:
-        return y
 
 def functionalOr(x, y):
     return x or y
