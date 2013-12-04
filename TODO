@@ -63,3 +63,8 @@ decorator for new searchfns
 
 
 convert to enum for python 3.4: corpus version, index type (gap or regular)
+see also: https://github.com/andrewcooke/simple-enum#simple-enum
+
+use pylru: https://github.com/jlhutch/pylru
+
+use pycontracts: http://andreacensi.github.io/contracts/
