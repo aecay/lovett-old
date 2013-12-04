@@ -1,0 +1,16 @@
+* TODO Fix cursor-moving search functions
+- should have an error on "daughter() & daughter()"
+* notes for xml format
+- allow inclusion of schema and psd conversion rules in document via
+  xinclude
+- for conversion to psd:
+
+  configuration specifies list of triples:
+  dash tag, attribute, value
+  order in list specifies the order of the dash tags in the output
+
+  this is sufficient to be reversible
+- include minimal schema with lovett distribution
+- include format version in file
+- include functions in lovett to upgrade from one version to another:
+  indefinite backwards compatibility
