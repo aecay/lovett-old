@@ -98,12 +98,12 @@ def isLeafNode(t):
 
 isLeaf = isLeafNode
 
-def isTrace(t):
+def is_trace(t):
     # TODO: the split below is a kludge; fix it
     return isLeafNode(t) and \
         t.text.split("-")[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
-def isEC(t):
+def is_ec(t):
     # TODO: inexact
     # TODO: how can an empty text happen?!
     return isLeafNode(t) and (t.text == "0" or t.text == "" or

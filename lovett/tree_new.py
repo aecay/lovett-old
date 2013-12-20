@@ -1,13 +1,22 @@
 from __future__ import unicode_literals
 
-import collections
+# Python standard libraries
 import collections.abc
 import copy
 
+# Third party libraries
+from lxml.builder import E
+from lxml import etree
+import six
+
+# Lovett libraries
 import lovett.util
 
+# TODO: add public decorator to control exports
 
 class Tree(collections.abc.Hashable):
+    __slots__ = ["parent", "metadata", "_label"]
+
     # TODO: use __getattr__ to pass to metadata dict?
     def __init__(self, label, metadata=None):
         self.parent = None
@@ -54,7 +63,6 @@ class Tree(collections.abc.Hashable):
         parent_index = self.parent_index
         if self.parent and parent_index > 0:
             return self.parent[parent_index - 1]
-        # We don't have a parent
         return None
 
     @property
@@ -62,7 +70,6 @@ class Tree(collections.abc.Hashable):
         parent_index = self.parent_index
         if self.parent and parent_index < len(self.parent) - 1:
             return self.parent[parent_index + 1]
-        # We don't have a parent
         return None
 
     @property
@@ -83,6 +90,8 @@ class Tree(collections.abc.Hashable):
         return r.strip()
 
 class Leaf(Tree):
+    __slots__ = ["text"]
+
     # TODO: implement dict interface passthrough to metadata?
     def __init__(self, label, text, metadata=None):
         super(Leaf, self).__init__(label, metadata)
@@ -120,7 +129,7 @@ class Leaf(Tree):
                 lemma = self.metadata.get('LEMMA', None)
                 if lemma is not None:
                     text += '-' + lemma
-            if lovett.util.isTrace(self):
+            if lovett.util.is_trace(self):
                 return ''.join(['(', self.label, ' ', text, idxstr, ')'])
             else:
                 return ''.join(['(', self.label, idxstr, ' ', text, ')'])
@@ -153,6 +162,15 @@ class Leaf(Tree):
     def pos(self):
         yield self
 
+    def to_xml(self):
+        d = {'label': self.label}
+        d.update(self.metadata)
+        for key, val in six.iteritems(d):
+            d[key] = str(val)
+        r = E.leaf(self.text, **d)
+        return r
+
+# TODO: move to another file
 class NTCoder(object):
     def __init__(self, tree, corpus):
         self.tree = tree
@@ -166,6 +184,8 @@ class NTCoder(object):
         return coder.codeTree(self.tree)
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
+    __slots__ = ["_children"]
+
     # TODO: implement dict interface passthrough to metadata? -- complicated,
     # since this is already a different type of sequence
     def __init__(self, label, children, metadata=None):
@@ -228,7 +248,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     def leaves(self):
         for child in self:  # pragma: no branch
             if isinstance(child, NonTerminal):
-                yield from child
+                yield from child.leaves
             else:
                 yield child
 
@@ -258,6 +278,14 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     @property
     def code(self):
         return NTCoder(self, self.corpus)
+
+    ### Methods
+
+    def map_leaves(self, fn, *args):
+        self._children = [fn(x, *args) for x in self]
+
+    def filter_leaves(self, fn, *args):
+        self._children = [x for x in self if fn(x, *args)]
 
     # Copying -- use copy.copy and copy.deepcopy
 
@@ -303,7 +331,18 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                                 indent + l)
         return "".join([s, leaves, metadata, ")"])
 
+    def to_xml(self):
+        d = {'label': self.label}
+        d.update(self.metadata)
+        for key, val in six.iteritems(d):
+            d[key] = str(val)
+        r = E.node(*[child.to_xml() for child in self],
+                   **d)
+        return r
+
 class Root(NonTerminal):
+    __slots__ = ["id"]
+
     def __init__(self, id, tree, metadata=None):
         super(Root, self).__init__('', [tree], metadata)
         self.id = id
@@ -354,6 +393,15 @@ class Root(NonTerminal):
     # @property
     # def urtext(self):
     #     return self.tree.urtext
+
+    def to_xml(self):
+        d = {}
+        if self.id:
+            d['ID'] = self.id
+        d.update(self.metadata)
+        for key, val in six.iteritems(d):
+            d[key] = str(val)
+        return E.sent(self[0].to_xml(), **d)
 
 class ParseError(Exception):
     pass
@@ -423,11 +471,12 @@ def _postprocess_parsed(l, format):
             print("error in id: %s" % id)
             raise e
     if len(l) < 2:
-        raise ParseError("malformed tree: node has too few children")
+        raise ParseError("malformed tree: node has too few children: %s" % l)
     if isinstance(l[1], str):
         # Simple leaf
         if len(l) != 2:
-            raise ParseError("malformed tree: leaf has too many children")
+            raise ParseError("malformed tree: leaf has too many children: %s"
+                             % l)
         m = {}
         label = l[0]
         text = l[1]
@@ -494,8 +543,40 @@ def parse(string, format="old-style"):
 
     n = next(stream, None)
     if n is not None:
-        raise ParseError("unmatched closing bracket")
+        raise ParseError("unmatched closing bracket: %s" % r)
     if not len(stack) == 0:
-        raise ParseError("unmatched opening bracket")
+        raise ParseError("unmatched opening bracket: %s" % stack)
 
     return r and _postprocess_parsed(r, format)
+
+def parse_xml(string):
+    xml = etree.fromstring(string)
+    if not xml.tag == "sent":
+        # TODO: XMLParseError subclass
+        # TODO: sent has more than one child
+        raise ParseError("not a sentence")
+    d = dict(xml.items())
+    id = d.pop('ID')
+    return Root(id, parse_xml_nt(xml[0]), d)
+
+def parse_xml_dispatch(elem):
+    if elem.tag == "node":
+        return parse_xml_nt(elem)
+    elif elem.tag == "leaf":
+        return parse_xml_leaf(elem)
+    else:
+        raise ParseError("unknown tag %s" % elem.tag)
+
+def parse_xml_nt(elem):
+    if not elem.tag == "node":
+        raise ParseError("not a node")
+    d = dict(elem.items())
+    label = d.pop('label')
+    return NonTerminal(label, [parse_xml_dispatch(child) for child in elem], d)
+
+def parse_xml_leaf(elem):
+    if not elem.tag == "leaf":
+        raise ParseError("not a leaf")
+    d = dict(elem.items())
+    label = d.pop('label')
+    return Leaf(label, elem.text, d)

@@ -1,19 +1,39 @@
+from __future__ import unicode_literals
+
+# Python standard library
+import collections
+import collections.abc
+import copy
+import re
+import multiprocessing
+import itertools
+
+# Lovett
 import lovett
 import lovett.io
 import lovett.util
 import lovett.tree_new
 
-import collections
-import collections.abc
-import copy
-import re
-import concurrent.futures
-import itertools
-
 __docformat__ = "restructuredtext en"
 
 # TODO: file-backed option -- never reads trees into memory, uses temp
 # files to process one-by-one
+
+# TODO:
+
+# with corpus.mapper as mapper:
+#     mapper.map(foo)
+#     mapper.filter(lambda x: bar)
+#     mapper.map(baz)
+
+# advanced idea:
+
+# with corpus.each_tree as t:
+#     arbitrary stuff with t
+#     more arbitrary stuff
+# and it is all executed, in parallel, at the end.
+
+# p = multiprocessing.Pool(maxtasksperchild=10)
 
 class CorpusIterator(collections.abc.Iterator):
     def __init__(self, corpus, sequence_iter):
@@ -52,46 +72,6 @@ class Corpus(collections.abc.MutableSequence):
         for t in self.trees:
             t.corpus = self
 
-    # TODO: make these module methods, not class methods
-    @classmethod
-    def fromTrees(cls, trees, metadata=None):
-        # TODO: potentially expensive...is this right?
-        return cls(metadata, copy.deepcopy(trees))
-
-    @classmethod
-    def fromTreeStrings(cls, trees, metadata=None):
-        fmt = metadata.get('FORMAT') if metadata else 'old-style'
-        with concurrent.futures.ProcessPoolExecutor() as exc:
-            return cls(metadata, exc.map(lovett.tree_new.parse, trees,
-                                         itertools.repeat(fmt)))
-
-    @classmethod
-    def fromFile(cls, file, format="old-style"):
-        # TODO: optimize
-        with open(file) as f:
-            trees = re.compile("\n\n+").split(f.read())
-        m = lovett.tree_new.parse(trees[0])
-        if m.tree.label == "VERSION":
-            meta = lovett.util._treeToDict(m)
-            return cls.fromTreeStrings(trees[1:], meta)
-        else:
-            return cls.fromTreeStrings(trees)
-
-    @classmethod
-    def fromFiles(cls, files, format="old-style"):
-        # TODO: optimize
-        trees = []
-        for file in files:
-            with open(file) as f:
-                trees.extend(re.compile("\n\n+").split(f.read()))
-        # TODO: mutliple files with their metadata...
-        m = lovett.tree_new.parse(trees[0])
-        if m.tree.label == "VERSION":
-            meta = lovett.util._treeToDict(m)
-            return cls.fromTreeStrings(trees[1:], meta)
-        else:
-            return cls.fromTreeStrings(trees)
-
     # ABC methods
     def __contains__(self, arg):
         return self.trees.__contains__(arg)
@@ -127,33 +107,71 @@ class Corpus(collections.abc.MutableSequence):
             fil = open(fil, "w")
         fil.write("( " + lovett.util.metadata_str(self.metadata, "VERSION") +
                   ")\n\n")
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
         strs = map(str, self.trees)
         fil.write("\n\n".join(strs))
         fil.close()
 
-    def treeStrings(self):
+    def tree_strings(self):
         # TODO: is this method needed? maybe a None file arg to write?
         strs = map(str, self.trees)
         return "\n\n".join(strs)
 
-    def _mapTrees(self, fn, *rest):
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     self.trees = list(executor.map(fn, self.trees, *rest))
-        self.trees = list(map(fn, self.trees, *rest))
+    # TODO: is it sad that we don't have a rest argument here anymore, and in
+    # filter?
+    def map_trees(self, fn):
+        self.trees = list(map(fn. self.trees))
 
-    def addCoder(self, coder):
+    def filter_trees(self, fn):
+        self.trees = itertools.compress(self.trees, map(fn, self.trees))
+
+    def add_coder(self, coder):
         self.coders[coder.name] = coder
 
-    def addCoders(self, coders):
+    def add_coders(self, coders):
         for coder in coders:
             self.addCoder(coder)
 
     @property
     def words(self):
+        # Should push this down into Tree class...
         count = 0
         for tree in self:
             for leaf in tree.pos:
                 if lovett.util.is_word(leaf):
                     count += 1
         return count
+
+
+def from_trees(trees, metadata=None):
+    # TODO: potentially expensive...is this right?
+    return Corpus(metadata, copy.deepcopy(trees))
+
+def from_tree_strings(trees, metadata=None):
+    # fmt = metadata.get('FORMAT') if metadata else 'old-style'
+    # TODO: how to pass format arg to parse?
+    return Corpus(metadata, map(lovett.tree_new.parse, trees))
+
+def from_file(file, format="old-style"):
+    # TODO: optimize
+    with open(file) as f:
+        trees = re.compile("\n\n+").split(f.read())
+    m = lovett.tree_new.parse(trees[0])
+    if m.tree.label == "VERSION":
+        meta = lovett.util._treeToDict(m)
+        return from_tree_strings(trees[1:], meta)
+    else:
+        return from_tree_strings(trees)
+
+def from_files(files, format="old-style"):
+    # TODO: optimize
+    trees = []
+    for file in files:
+        with open(file) as f:
+            trees.extend(re.compile("\n\n+").split(f.read()))
+    # TODO: mutliple files with their metadata...
+    m = lovett.tree_new.parse(trees[0])
+    if m.tree.label == "VERSION":
+        meta = lovett.util._treeToDict(m)
+        return from_tree_strings(trees[1:], meta)
+    else:
+        return from_tree_strings(trees)

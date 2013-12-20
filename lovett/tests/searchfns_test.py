@@ -2,12 +2,14 @@ import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
-import lovett.tree_new as T
+import lovett.tree_new
 import re
 
-leaf = T.Leaf
+# TODO: test combining unicode characters, per Jana's suggestion
 
-LT = T.parse
+leaf = lovett.tree_new.Leaf
+
+LT = lovett.tree_new.parse
 
 class TestSearchFns(unittest.TestCase):
     def setUp(self):
@@ -79,7 +81,7 @@ class TestSearchFns(unittest.TestCase):
                                              leaf("N", "apple")])
 
     def test_hasLemma(self):
-        t = T.parse("( (IP (NP-SBJ (D I-i)) (BEP am-be) (PP (P in-in) (ADV here-here))))", "dash")
+        t = LT("( (IP (NP-SBJ (D I-i)) (BEP am-be) (PP (P in-in) (ADV here-here))))", "dash")
         tt = TreeTransformer(t)
         tt.findNodes(hasLemma("i"))
         self.assertEqual(tt.matches(), [leaf("D", "I", {'LEMMA': 'i'})])
