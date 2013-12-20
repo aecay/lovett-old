@@ -14,3 +14,7 @@
 - include format version in file
 - include functions in lovett to upgrade from one version to another:
   indefinite backwards compatibility
+* lua
+lupa: lua <-> python
+metalua: macros in lua
+rclient: lua <-> r http://scilua.org/rclient.html
