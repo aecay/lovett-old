@@ -18,3 +18,5 @@
 lupa: lua <-> python
 metalua: macros in lua
 rclient: lua <-> r http://scilua.org/rclient.html
+* progress indicator decorator
+https://github.com/noamraph/tqdm
