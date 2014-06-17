@@ -3,7 +3,7 @@ from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
 import re
-from lovett.corpus_xml import parse_string
+from lovett.corpus import parse_string
 import lxml.etree
 
 # TODO: test combining unicode characters, per Jana's suggestion

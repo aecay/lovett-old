@@ -1,7 +1,7 @@
 import testtools
 import lxml.etree
 
-from lovett.corpus_xml import parse_string
+from lovett.corpus import parse_string
 
 class TreeXmlTest(testtools.TestCase):
     def test_eq(self):

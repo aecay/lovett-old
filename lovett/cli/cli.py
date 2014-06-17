@@ -6,7 +6,7 @@ import click
 
 # from .. import __version__
 
-from lovett.corpus_xml import (parse_file, _validate_psdx)
+from lovett.corpus import (parse_file, _validate_psdx)
 from lxml import etree
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)

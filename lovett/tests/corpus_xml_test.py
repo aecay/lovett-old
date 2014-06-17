@@ -1,5 +1,5 @@
 import testtools
-from ..corpus_xml import (parse_string, _validate_psdx)
+from ..corpus import (parse_string, _validate_psdx)
 from .utils import PassesValidation
 
 def T(string):

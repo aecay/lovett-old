@@ -1,5 +1,5 @@
 from lxml.builder import ElementMaker
-from .corpus_xml import parser
+from .corpus import parser
 from .tree import Tree as PsdTree
 import re
 
