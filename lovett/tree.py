@@ -1,318 +1,196 @@
-# This Python file uses the following encoding: utf-8
-from __future__ import unicode_literals
+from lxml import etree
 
-import collections
-import re
-import string
+import collections.abc
 
-import lovett.util
+class AnnotaldXmlError(Exception):
+    pass
 
-from functools import total_ordering
+def isMetaElement(x):
+    return x.tag == "meta"
 
-__docformat__ = "restructuredtext en"
+def _match(one, other):
+    if one.tag != other.tag:
+        return False
+    for name, value in one.attrib.items():
+        if other.attrib.get(name) != value:
+            return False
+    for name in other.attrib.keys():
+        if name not in one.attrib.keys():
+            return False
+    if not one.text == other.text:
+        return False
+    if not one.tail == other.tail:
+        return False
+    cl1 = one.getchildren()
+    cl2 = other.getchildren()
+    if len(cl1) != len(cl2):
+        return False
+    for c1, c2 in zip(cl1, cl2):
+        m = _match(c1, c2)
+        if not m:
+            return False
+    return True
 
-##########
+class TreeNode(etree.ElementBase):
+    def label(self):
+        cat = self.get("category")
+        subcat = self.get("subcategory", None)
+        if subcat is not None:
+            return cat + "-" + subcat
+        else:
+            return cat
 
-# Natural Language Toolkit: Text Trees
-#
-# Copyright (C) 2001-2012 NLTK Project
-# Author: Edward Loper <edloper@gradient.cis.upenn.edu>
-#         Steven Bird <sb@csse.unimelb.edu.au>
-#         Peter Ljunglöf <peter.ljunglof@gu.se>
-#         Nathan Bodenstab <bodenstab@cslu.ogi.edu> (tree transforms)
-# URL: <http://www.nltk.org/>
-# TODO
-# For license information, see LICENSE.TXT
+    def set_label(self, newLabel):
+        p = newLabel.split("-")
+        self.attrib["category"] = p[0]
+        if len(p) == 2:
+            self.attrib["subcategory"] = p[1]
+        if len(p) > 2:
+            raise AnnotaldXmlError("cannot set multiple dash tags in XML: " +
+                                   newLabel)
 
-######################################################################
-## Trees
-######################################################################
+    def urtext(self):
+        # TODO:
+        # - join continued words
+        # - remove spaces before punctuation
+        # look at using etree.XPath("//text()") to get a list of in-order text
+        # chunks...
+        # or: traverse the tree in order, push text (and appropriate spaces)
+        # onto a list, concat and return
+        return etree.tostring(self, method="text")
 
-# TODO: make an abstract base class, have Leaf and Tree inherit from it
-class Leaf(object):
-    """TODO"""
-    def __init__(self, node, label):
-        self.label = label
-        self._node = node
+    def sentence_node(self):
+        p = self
+        while True:
+            p = p.getparent()
+            if p is None:
+                raise AnntoaldXmlError("could not find sentence for %r" % self)
+            if p.tag == "sentence":
+                return t
 
-@total_ordering
-class Tree(collections.MutableSequence):
-    """foo.  TODO
+    def left_sibling(self):
+        return self.getprevious()
 
-    """
-    def __init__(self, node, children):
-        if node is None or children is None:
-            raise TypeError("Two arguments required to create %s" % self.__name__)
-        if not isinstance(node, str):
-            raise TypeError("First argument to initialize %s should be a string" %
-                            self.__name__)
-        if not isinstance(children, list):
-            raise TypeError("Second argument to initialize %s should be list-like" %
-                            self.__name__)
+    def right_sibling(self):
+        return self.getnext()
 
-        self._node = node
-        self._children = children
+    def metadata(self):
+        meta = self.find("meta")
+        if meta is None:
+            meta = self.makeelement("meta")
+            self.insert(0, meta)
+        return MetadataDict(meta)
 
-    # Basic Properties
-    @property
-    def node(self):
-        return self._node
+    def _strip_empty_meta(self):
+        for m in self.getiterator("meta"):
+            if len(m) == 0:
+                t = m.tail
+                p = m.getparent()
+                p.remove(m)
+                if t is not None and t != "":
+                    p.text = p.text or ""
+                    p.text += t
 
-    @node.setter
-    def node(self, val):
-        self._node = val
-
-    # TODO: is a generator right here?
-    @property
-    def children(self):
-        for i in self:
-            yield i
-
-    # Abstract methods
-
-    # For Container
-    def __contains__(self, obj):
-        return self._children.__contains__(obj)
-
-    # For Iterable
     def __iter__(self):
-        return self._children.__iter__()
+        raise AnnotaldXmlError("you shouldn't iterate directly over an element, you'll bogusly find metadata")
 
-    def next(self):
-        return self._children.next()
-
-    # For total_ordering
     def __eq__(self, other):
-        if not isinstance(other, Tree):
+        if not isinstance(other, etree._Element):
             return False
-        return self.node == other.node and self._children == other._children
-    def __lt__(self, other):
-        if not isinstance(other, Tree):
-            return False
-        return self.node < other.node or super(Tree,self).__lt__(self, other)
+        self._strip_empty_meta()
+        try:
+            other._strip_empty_meta()
+        except AttributeError:
+            pass
+        print(etree.tostring(self))
+        print(etree.tostring(other))
+        return _match(self, other)
 
-    # For Sized
+    # Not pictured: parent_index, __eq__, __hash__
+
+class MetadataDict(collections.abc.MutableMapping):
+    # TODO: make a forbidden metadata items property on the class; if we try
+    # to set a forbidden metadata item throw an error.  Forbidden metadata
+    # will be things like category, tracetype (for traces) etc. which should
+    # be set as attrs and not metadata
+    def __init__(self, element):
+        self.element = element
+
+    def __getitem__(self, item):
+        r = self.element.find(item.lower())
+        if r is None:
+            raise KeyError
+        if len(r) > 0:
+            return MetadataDict(r)
+        return r.text
+
+    def __setitem__(self, item, val):
+        if item in ["tracetype", "ectype", "category", "subcategory",
+                    "comtype", "id"]:
+            raise AnnotaldXmlError(
+                "Key '%s' should be set as an attribute, not metadata" % item)
+        r = self.element.find(item.lower())
+        if r is None:
+            r = self.element.makeelement(item.lower())
+            self.element.append(r)
+        if hasattr(val, "items"):
+            smd = MetadataDict(r)
+            for k, v in val.items():
+                smd[k] = v
+        else:
+            r.text = val
+
+    def __delitem__(self, item):
+        raise NotImplementedError()
+
     def __len__(self):
-        return len(self._children)
+        return len(self.element)
 
-    # For Sequence
-    def __getitem__(self, index):
-        if isinstance(index, (int, slice)):
-            return self._children[index]
-        elif isinstance(index, (list, tuple)):
-            if len(index) == 0:
-                return self
-            elif len(index) == 1:
-                return self[index[0]]
+    def __iter__(self):
+        yield from (x.tag for x in self.element)
+
+class NonTerminal(TreeNode):
+    # not pictured: children, leaves, height, subtrees, pos, map_leaves,
+    # filter_leaves, to_xml, __str__
+    def subtrees(self):
+        for t in self.children():
+            if isinstance(t, Terminal):
+                yield t
             else:
-                return self[index[0]][index[1:]]
-        else:
-            raise TypeError("%s indices must be integers, not %s" %
-                            (type(self).__name__, type(index).__name__))
+                yield t
+                yield from t.subtrees()
 
-    # For MutableSequence
-    def __setitem__(self, index, value):
-        if isinstance(index, (int, slice)):
-            self._children[index] = value
-            # TODO: what should be returned???
-            return self._children[index]
-        elif isinstance(index, (list, tuple)):
-            if len(index) == 0:
-                raise IndexError('The tree position () may not be assigned to.')
-            elif len(index) == 1:
-                self[index[0]] = value
-            else:
-                self[index[0]][index[1:]] = value
-        else:
-            raise TypeError("%s indices must be integers, not %s" %
-                            (type(self).__name__, type(index).__name__))
+    def children(self):
+        yield from (x for x in self.iterchildren() if not isMetaElement(x))
 
-    def __delitem__(self, index):
-        if isinstance(index, (int, slice)):
-            # TODO: should something be returned?
-            del self._children[index]
-        elif isinstance(index, (list, tuple)):
-            if len(index) == 0:
-                raise IndexError('The tree position () may not be deleted.')
-            elif len(index) == 1:
-                del self[index[0]]
-            else:
-                del self[index[0]][index[1:]]
-        else:
-            raise TypeError("%s indices must be integers, not %s" %
-                            (type(self).__name__, type(index).__name__))
+class Sentence(etree.ElementBase):
+    def tree(self):
+        # TODO: falls over on metadata
+        return self[0]
 
-    def insert(self, index, value):
-        if isinstance(index, (int, slice)):
-            return self._children.insert(index, value)
-        elif isinstance(index, (list, tuple)):
-            if len(index) == 0:
-                raise IndexError('The tree position () may not be inserted at.')
-            elif len(index) == 1:
-                self.insert(index[0], value)
-            else:
-                self[index[0]].insert(index[1:], value)
-        else:
-            raise TypeError("%s indices must be integers, not %s" %
-                            (type(self).__name__, type(index).__name__))
+    def id(self):
+        return self.get("id", None)
 
-    #////////////////////////////////////////////////////////////
-    # Parsing
-    #////////////////////////////////////////////////////////////
+    def set_id(self, newid):
+        self.set("id", new_id)
 
-    @classmethod
-    def parse(cls, s, brackets='()', parse_node=None, parse_leaf=None,
-              node_pattern=None, leaf_pattern=None,
-              remove_empty_top_bracketing=False):
-        """
-        Parse a bracketed tree string and return the resulting tree.
-        Trees are represented as nested brackettings, such as::
+class Terminal(TreeNode):
+    pass
 
-          (S (NP (NNP John)) (VP (V runs)))
+class Text(Terminal):
+    pass
 
-        :type s: str
-        :param s: The string to parse
+class Trace(Terminal):
+    # TODO: implement validation in _init method, e.g. must have index.  Else
+    # assign unused index from the root tree.  Make it so reparenting an index
+    # will reassign a unique value.
 
-        :type brackets: str (length=2)
-        :param brackets: The bracket characters used to mark the
-            beginning and end of trees and subtrees.
+    # TODO: need another tracetype: zero, amovt, and etc.
+    pass
 
-        :type parse_node: function
-        :type parse_leaf: function
-        :param parse_node, parse_leaf: If specified, these functions
-            are applied to the substrings of ``s`` corresponding to
-            nodes and leaves (respectively) to obtain the values for
-            those nodes and leaves.  They should have the following
-            signature:
+class Ec(Terminal):
+    pass
 
-               parse_node(str) -> value
-
-            For example, these functions could be used to parse nodes
-            and leaves whose values should be some type other than
-            string (such as ``FeatStruct``).
-            Note that by default, node strings and leaf strings are
-            delimited by whitespace and brackets; to override this
-            default, use the ``node_pattern`` and ``leaf_pattern``
-            arguments.
-
-        :type node_pattern: str
-        :type leaf_pattern: str
-        :param node_pattern, leaf_pattern: Regular expression patterns
-            used to find node and leaf substrings in ``s``.  By
-            default, both nodes patterns are defined to match any
-            sequence of non-whitespace non-bracket characters.
-
-        :type remove_empty_top_bracketing: bool
-        :param remove_empty_top_bracketing: If the resulting tree has
-            an empty node label, and is length one, then return its
-            single child instead.  This is useful for treebank trees,
-            which sometimes contain an extra level of bracketing.
-
-        :return: A tree corresponding to the string representation ``s``.
-            If this class method is called using a subclass of Tree,
-            then it will return a tree of that type.
-        :rtype: Tree
-        """
-        if not isinstance(brackets, str) or len(brackets) != 2:
-            raise TypeError('brackets must be a length-2 string')
-        if re.search('\s', brackets):
-            raise TypeError('whitespace brackets not allowed')
-        # Construct a regexp that will tokenize the string.
-        open_b, close_b = brackets
-        open_pattern, close_pattern = (re.escape(open_b), re.escape(close_b))
-        if node_pattern is None:
-            node_pattern = '[^\s%s%s]+' % (open_pattern, close_pattern)
-        if leaf_pattern is None:
-            leaf_pattern = '[^\s%s%s]+' % (open_pattern, close_pattern)
-        token_re = re.compile('%s\s*(%s)?|%s|(%s)' % (
-            open_pattern, node_pattern, close_pattern, leaf_pattern))
-        # Walk through each token, updating a stack of trees.
-        stack = [(None, [])] # list of (node, children) tuples
-        for match in token_re.finditer(s):
-            token = match.group()
-            # Beginning of a tree/subtree
-            if token[0] == open_b:
-                if len(stack) == 1 and len(stack[0][1]) > 0:
-                    cls._parse_error(s, match, 'end-of-string')
-                node = token[1:].lstrip()
-                if parse_node is not None: node = parse_node(node)
-                stack.append((node, []))
-            # End of a tree/subtree
-            elif token == close_b:
-                if len(stack) == 1:
-                    if len(stack[0][1]) == 0:
-                        cls._parse_error(s, match, open_b)
-                    else:
-                        cls._parse_error(s, match, 'end-of-string')
-                node, children = stack.pop()
-                stack[-1][1].append(cls(node, children))
-            # Leaf node
-            else:
-                if len(stack) == 1:
-                    cls._parse_error(s, match, open_b)
-                if parse_leaf is not None: token = parse_leaf(token)
-                stack[-1][1].append(token)
-
-        # check that we got exactly one complete tree.
-        if len(stack) > 1:
-            cls._parse_error(s, 'end-of-string', close_b)
-        elif len(stack[0][1]) == 0:
-            cls._parse_error(s, 'end-of-string', open_b)
-        else:
-            assert stack[0][0] is None
-            assert len(stack[0][1]) == 1
-        tree = stack[0][1][0]
-
-        # If the tree has an extra level with node='', then get rid of
-        # it.  E.g.: "((S (NP ...) (VP ...)))"
-        if remove_empty_top_bracketing and tree.node == '' and len(tree) == 1:
-            tree = tree[0]
-        # return the tree.
-        return tree
-
-    @classmethod
-    def _parse_error(cls, s, match, expecting):
-        """
-        Display a friendly error message when parsing a tree string fails.
-        :param s: The string we're parsing.
-        :param match: regexp match of the problem token.
-        :param expecting: what we expected to see instead.
-        """
-        # Construct a basic error message
-        if match == 'end-of-string':
-            pos, token = len(s), 'end-of-string'
-        else:
-            pos, token = match.start(), match.group()
-        msg = '%s.parse(): expected %r but got %r\n%sat index %d.' % (
-            cls.__name__, expecting, token, ' '*12, pos)
-        # Add a display showing the error token itsels:
-        s = s.replace('\n', ' ').replace('\t', ' ')
-        offset = pos
-        if len(s) > pos+10:
-            s = s[:pos+10]+'...'
-        if pos > 10:
-            s = '...'+s[pos-10:]
-            offset = 13
-        msg += '\n%s"%s"\n%s^' % (' '*16, s, ' '*(17+offset))
-        raise ValueError(msg)
-
-    #////////////////////////////////////////////////////////////
-    # Visualization & String Representation
-    #////////////////////////////////////////////////////////////
-
-    # TODO: use our utility fns
-    def __repr__(self):
-        childstr = ", ".join(repr(c) for c in self)
-        return '%s(%r, [%s])' % (type(self).__name__, self.node, childstr)
-
-    def __str__(self, indent = 0):
-        if len(self) == 1 and isinstance(self[0], str):
-            # This is a leaf node
-            # TODO: python3 compat of isinstance, string formatting
-            return u"(%s %s)" % (str(self.node), str(self[0]))
-        else:
-            s = u"(%s " % (str(self.node))
-            l = len(s)
-            # lstrip is to whack the initial newline+spaces
-            leaves = (u"\n" + u" " * (indent + l)).join(map(lambda x: x.__str__(indent + l), self))
-            return u"%s%s%s" % (s, leaves, u")")
+class Comment(Terminal):
+    # TODO: use XML comments??
+    pass

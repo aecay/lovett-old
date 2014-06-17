@@ -1,6 +1,6 @@
 from lxml.builder import ElementMaker
 from .corpus import parser
-from .tree import Tree as PsdTree
+from .psd_tree import Tree as PsdTree
 import re
 
 E = ElementMaker(makeelement=parser.makeelement)

@@ -2,7 +2,7 @@ import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
-import lovett.tree_xml
+import lovett.tree
 import re
 
 # TODO: test combining unicode characters, per Jana's suggestion

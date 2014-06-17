@@ -1,7 +1,7 @@
 import pkg_resources
 
 from lxml import etree
-from .tree_xml import (Sentence, NonTerminal, Text, Trace, Ec, Comment)
+from .tree import (Sentence, NonTerminal, Text, Trace, Ec, Comment)
 
 # TODO: __all__ etc.
 
