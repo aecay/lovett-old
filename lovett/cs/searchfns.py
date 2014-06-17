@@ -45,7 +45,7 @@ class SearchFunction:
         # TODO: memoize
         # This if statement is so that non-results percolate through a chained
         # function.
-        if arg:
+        if arg is not None:
             # Handle lists, returned by sister() etc.  this is looking
             # ugly, as we also handle lists in the treetransformer class
             if isinstance(arg, list):
@@ -63,7 +63,7 @@ class SearchFunction:
     def __and__(self, other):
         def _and(t):
             res = self(t)
-            if not res:
+            if res is None:
                 return res
             else:
                 return other(t)
@@ -73,7 +73,7 @@ class SearchFunction:
     def __or__(self, other):
         def _or(t):
             res = self(t)
-            if res:
+            if res is not None:
                 return res
             else:
                 return other(t)
@@ -108,8 +108,10 @@ def setIgnore(fn):
     ignore_function = fn
     return old_ignore
 
+# TODO
 def shouldIgnore(t):
-    return ignore_function(t) or default_ignore_function(t)
+    # return ignore_function(t) or default_ignore_function(t)
+    return False
 
 # Access functions
 
@@ -124,7 +126,7 @@ sister_fn_map = {
 def allLeftSisters(t):
     res = []
     while t:
-        t = t.left_sibling
+        t = t.left_sibling()
         if t and not shouldIgnore(t):
             res.append(t)
     return res
@@ -132,7 +134,7 @@ def allLeftSisters(t):
 def allRightSisters(t):
     res = []
     while t:
-        t = t.right_sibling
+        t = t.right_sibling()
         if t and not shouldIgnore(t):
             res.append(t)
     return res
@@ -144,7 +146,7 @@ def allSisters(t):
 def nextLeftSister(t):
     res = None
     while not res and t:
-        t = t.left_sibling
+        t = t.left_sibling()
         if not shouldIgnore(t):
             res = t
     return [res]
@@ -152,15 +154,15 @@ def nextLeftSister(t):
 def nextRightSister(t):
     res = None
     while not res and t:
-        t = t.right_sibling
+        t = t.right_sibling()
         if not shouldIgnore(t):
             res = t
     return [res]
 
 def allDaughters(t):
-    if not hasattr(t, '__iter__'):
-        return t
-    return [d for d in t if not shouldIgnore(d)]
+    if not hasattr(t, 'children'):
+        return None
+    return [d for d in t.children() if not shouldIgnore(d)]
 
 # Utility functions
 
@@ -208,6 +210,7 @@ def _get_arg_string(x):
 
 # TODO: handle ignore
 # TODO: NP=2 should give hasLabel("NP") -> True
+# TODO: add hasCat and hasSubcat
 @public
 def hasLabel(label, exact=False):
     """Tests if a node has a given label.
@@ -223,7 +226,7 @@ def hasLabel(label, exact=False):
 
     """
     def _hasLabel(t):
-        to_match = t.label
+        to_match = t.label()
 
         if hasattr(label, "match"):
             if label.match(to_match):
@@ -243,6 +246,7 @@ def hasLabel(label, exact=False):
 class StartsWith:
     def __init__(self, string):
         self.string = string
+        self.pattern = re.escape(string)
 
     def match(self, to_match):
         return to_match.startswith(self.string)
@@ -270,12 +274,12 @@ def hasText(text):
     def _hasText(t):
         if isinstance(t, T.Leaf):
             if hasattr(text, "match"):
-                if text.match(t.text):
+                if text.match(t.text()):
                     return t
                 else:
                     return None
             else:
-                exact_match = text == t.text
+                exact_match = text == t.text()
                 if exact_match:
                     return t
                 else:
@@ -300,7 +304,7 @@ def hasLemma(lemma):
         if not isinstance(t, T.Leaf):
             return None
         try:
-            the_lemma = t.metadata['LEMMA']
+            the_lemma = t.metadata()['LEMMA']
         except KeyError:
             return None
         if hasattr(lemma, "match"):
@@ -360,11 +364,12 @@ def hasDaughter(fn=identity):
 
     """
     def _hasDaughter(t):
-        if not hasattr(t, '__iter__'):
+        ds = allDaughters(t)
+        if ds is None:
             return None
         else:
-            vals = [fn(d) for d in allDaughters(t)]
-            if reduce(functionalOr, vals):
+            vals = [fn(d) for d in ds]
+            if any(map(lambda x: x is not None, vals)):
                 return t
             else:
                 return None
@@ -535,8 +540,8 @@ def hasParent(fn=identity):
 
     """
     def _hasParent(t):
-        p = t.parent
-        if fn(p):
+        p = t.getparent()
+        if fn(p) is not None:
             return t
         else:
             return None
@@ -551,7 +556,7 @@ def parent(fn=identity):
 
     """
     def _parent(t):
-        p = t.parent
+        p = t.getparent()
         return fn(p)
     return SearchFunction(_parent, fn)
 
@@ -564,9 +569,9 @@ def hasAncestor(fn=identity):
 
     """
     def _hasAncestor(t):
-        if t:
+        if t is not None:
             res = hasParent(fn)(t)
-            if res or hasAncestor(fn)(t.parent):
+            if res is not None or hasAncestor(fn)(t.getparent()) is not None:
                 return t
             else:
                 return None
@@ -587,7 +592,7 @@ def ancestor(fn=identity):
         # we have to call through the wrapped fn, not the underscore version
         # as is done here.
         if t:
-            p = t.parent
+            p = t.getparent()
             if fn(p):
                 return p
             else:
@@ -603,11 +608,11 @@ def leftEdge(fn=identity):
 
     """
     def _leftEdge(t):
-        if fn(t):
+        if fn(t) is not None:
             return t
         down_left = t[0]
-        while shouldIgnore(down_left) and down_left.right_sibling:
-            down_left = down_left.right_sibling
+        while shouldIgnore(down_left) and down_left.right_sibling():
+            down_left = down_left.right_sibling()
         if isinstance(down_left, T.Tree):
             return leftEdge(fn)(down_left)
         else:
@@ -624,14 +629,17 @@ def iPrecedes(fn=identity):
     """
     def _iPrecedes(t):
         this_node = t
-        while this_node:
-            next_node = this_node.right_sibling
-            while next_node and shouldIgnore(next_node):
-                next_node = next_node.right_sibling
-            if next_node:
-                if leftEdge(fn)(next_node):
+        while this_node is not None:
+            next_node = this_node.right_sibling()
+            while (next_node is not None and
+                   shouldIgnore(next_node)):
+                next_node = next_node.right_sibling()
+            if next_node is not None:
+                if leftEdge(fn)(next_node) is not None:
                     return t
-            this_node = this_node.parent
+            this_node = this_node.getparent()
+            if this_node.tag == "sentence":
+                this_node = None
         return None
     return SearchFunction(_iPrecedes, fn)
 
@@ -937,11 +945,11 @@ def deep(fn):
         # TODO: We have null handling here is because we don't go
         # through SearchFunction again.  Should we?
         if t:
-            ret = t.subtrees
+            ret = t.subtrees()
             ret = map(fn, ret)
             # TODO: we don't want this forcing, but without it, we get buried
             # too deep in lists
-            return list(x for x in util.iter_flatten(ret) if x)
+            return list(x for x in util.iter_flatten(ret) if x is not None)
         else:
             return t
     return SearchFunction(_deep, fn)
@@ -964,4 +972,4 @@ def ignoring(ignore_fn, fn):
 # Boolean operations as language keywords is dumb
 
 def functionalOr(x, y):
-    return x or y
+    return x is not None or y is not None

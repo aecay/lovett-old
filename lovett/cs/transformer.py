@@ -3,13 +3,15 @@ import copy
 import lovett.tree
 import lovett.util
 
+import itertools
+
 # TODO: addDashTag
 # TODO: look at conversations w jana for good ideas
 
 class TreeTransformer:
-    def __init__(self, tree):
-        # Do not mutate the tree we are given -- make a copy for our use.
-        self._tree = tree
+    def __init__(self, sentence):
+        self._sentence = sentence
+        self._tree = sentence.tree()
         self._matches = []
         self._max_trace = lovett.util.largest_index(self._tree)
         self._made_copy = False
@@ -34,12 +36,13 @@ class TreeTransformer:
     def findNodes(self, fn=lambda x: x, deep=True):
         self._matches = []
         if deep:
-            to_match = self._tree.subtrees
+            # TODO: kludge!
+            to_match = itertools.chain([self._tree], self._tree.subtrees())
         else:
             to_match = self._tree
         for p in to_match:
             res = fn(p)
-            if res:
+            if res is not None:
                 # Fuck, this is excruciating
                 self._matches.extend(list(lovett.util.iter_flatten([res])))
         return self

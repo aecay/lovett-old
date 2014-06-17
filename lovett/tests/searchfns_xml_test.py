@@ -2,41 +2,75 @@ import unittest
 from lovett.cs.transformer import TreeTransformer
 from lovett.cs.searchfns import *
 import lovett.cs.searchfns
-import lovett.tree_xml
 import re
+from lovett.corpus_xml import parse_string
+import lxml.etree
 
 # TODO: test combining unicode characters, per Jana's suggestion
 
-leaf = lovett.tree_new.Leaf
+def leaf(cat, txt, *args):
+    r = parse_string("<text category=\"%s\">%s</text>" % (cat, txt))
+    if len(args) == 1:
+        for k in args[0]:
+            r.metadata()[k] = args[0][k]
+    return r
 
-LT = lovett.tree_new.parse
+def LT(s):
+    parsed = parse_string(s)
+    if parsed.tag == "corpus":
+        parsed = list(parsed.trees())[0]
+    return parsed
 
-@unittest.skip("searchfns deprecated")
 class TestSearchFns(unittest.TestCase):
     def setUp(self):
         self.t = LT("""
-        ( (IP (ADVP (Q very) (ADV slowly)) (, ,)
-        (NP-SBJ (NPR John))
-        (V eats)
-        (NP-OB1 (D the) (ADJ tasty) (N apple))))""")
+        <corpus>
+        <sentence>
+        <nonterminal category="IP">
+        <nonterminal category="ADVP">
+        <text category="Q">very</text>
+        <text category="ADV">slowly</text>
+        </nonterminal>
+        <text category=",">,</text>
+        <nonterminal category="NP" subcategory="SBJ">
+        <text category="NPR">John</text>
+        </nonterminal>
+        <text category="V">eats</text>
+        <nonterminal category="NP" subcategory="OB1">
+        <text category="D">the</text>
+        <text category="ADJ">tasty</text>
+        <text category="N">apple</text>
+        </nonterminal>
+        </nonterminal>
+        </sentence>
+        </corpus>
+        """)
         self.tt = TreeTransformer(self.t)
 
     # TODO: test optional args, proper matching of dash labels, regex, etc.
-    def test_hasLabel(self):
+    def test_hasLabel_terminal(self):
         self.tt.findNodes(hasLabel("N"))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
 
+    def test_hasLabel_nonterminal(self):
         self.tt.findNodes(hasLabel("NP"))
         self.assertEqual(self.tt.matches(),
-                         [LT("(NP-SBJ (NPR John))"),
-                          LT("(NP-OB1 (D the) (ADJ tasty) (N apple))")])
+                         [LT("""<nonterminal category="NP" subcategory="SBJ">
+                         <text category="NPR">John</text>
+                         </nonterminal>"""),
+                          LT("""
+                          <nonterminal category="NP" subcategory="OB1">
+                          <text category="D">the</text>
+                          <text category="ADJ">tasty</text>
+                          <text category="N">apple</text>
+                          </nonterminal> """)])
 
         self.tt.findNodes(hasLabel("NP", exact=True))
         self.assertEqual(self.tt.matches(), [])
 
     def test_hasDaughter(self):
         self.tt.findNodes(hasDaughter(hasLabel("V")))
-        self.assertEqual(self.tt.matches(), [self.t[0]])
+        self.assertEqual(self.tt.matches(), [self.t.tree()])
 
     def test_daughters(self):
         self.tt.findNodes(hasLabel("IP") & daughters(hasLabel("V")))
@@ -55,9 +89,14 @@ class TestSearchFns(unittest.TestCase):
     def test_not(self):
         self.tt.findNodes(hasLabel("IP") & daughters(~hasLabel("NP")))
         self.assertEqual(self.tt.matches(),
-                         [LT("(ADVP (Q very) (ADV slowly))"),
-                          LT("(, ,)"),
-                          LT("(V eats)")])
+                         [LT("""
+                         <nonterminal category="ADVP">
+                         <text category="Q">very</text>
+                         <text category="ADV">slowly</text>
+                         </nonterminal>
+                         """),
+                          leaf(",", ","),
+                          leaf("V", "eats")])
 
     def test_hasAncestor(self):
         self.tt.findNodes(hasLabel("N") & hasAncestor(hasLabel("IP")))
@@ -65,15 +104,18 @@ class TestSearchFns(unittest.TestCase):
 
     def test_hasParent(self):
         self.tt.findNodes(hasLabel("N") & hasParent(hasLabel("NP")))
+        print(lxml.etree.tostring(self.tt.matches()[0]))
         self.assertEqual(self.tt.matches(), [leaf("N", "apple")])
 
     ##### Tests for ignoring()
+    @unittest.skip("ignore doesn't work")
     def test_ignoring_iPrecedes(self):
         self.tt.findNodes(hasLabel("ADV") &
                           ignoring(hasLabel(","),
                                    iPrecedes(hasLabel("NPR"))))
         self.assertEqual(self.tt.matches(), [leaf("ADV", "slowly")])
 
+    @unittest.skip("ignore doesn't work")
     def test_ignoring_daughters(self):
         self.tt.findNodes(hasLabel("NP") &
                           ignoring(hasLabel("ADJ"), daughters()))
@@ -81,6 +123,7 @@ class TestSearchFns(unittest.TestCase):
                                              leaf("D", "the"),
                                              leaf("N", "apple")])
 
+    @unittest.skip("LT must catch up")
     def test_hasLemma(self):
         t = LT("( (IP (NP-SBJ (D I-i)) (BEP am-be) (PP (P in-in) (ADV here-here))))", "dash")
         tt = TreeTransformer(t)
@@ -121,7 +164,7 @@ class TestSearchFns(unittest.TestCase):
             i = eval(s)
             self.assertEqual(s, str(i))
 
-    # @unittest.expectedFailure
+    @unittest.skip("not implemented yet")
     def test_startswith(self):
         self.tt.findNodes(hasWord(startsWith("t")))
         self.assertEqual(self.tt.matches(),

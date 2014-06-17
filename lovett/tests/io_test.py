@@ -2,7 +2,7 @@ import unittest
 from io import StringIO
 import textwrap
 
-from lovett.tree import LovettTree
+from lovett.tree import Tree as LovettTree
 from lovett.corpus import Corpus
 import lovett.io
 

@@ -1,0 +1,73 @@
+grammar {
+   start = element corpus {
+      element sentence {
+         attribute id { text },
+         anyNode
+      }+
+   }
+
+   anyNode =
+      nonterminal | terminal
+
+   categories =
+      attribute category { catStr },
+      attribute subcategory { subcatStr }?
+
+   nonterminal = element nonterminal {
+      categories,
+      metadata?,
+      anyNode+
+   }
+
+   terminal =
+      txt | comment | trace | ec
+
+   comment = element comment {
+      attribute comtype { upper },
+      text
+   }
+
+   trace = element trace {
+      attribute tracetype { upper },
+      categories,
+      # TODO: impose the requirement to have metadata
+      metadata?
+   }
+
+   ec = element ec {
+      attribute ectype { lower },
+      categories,
+      metadata?
+   }
+
+   txt = element text {
+      categories,
+      metadata?,
+      text
+   }
+
+   metaKey = element * {
+      index | idxtype | lemma | metaKey | text
+   }
+
+   metadata = element meta {
+      metaKey+
+   }
+
+   index = element index {
+      xsd:string { pattern = "[0-9]+" }
+   }
+
+   idxtype = element idxtype {
+      "regular"|"gap"
+   }
+
+   lemma = element lemma {
+      text
+   }
+
+   upper = xsd:string { pattern = "[A-Z]+" }
+   lower = xsd:string { pattern = "[a-z]+" }
+   catStr = xsd:string { pattern = "([A-Z][A-Z0-9]*)|[.,]"}
+   subcatStr = xsd:string { pattern = "[A-Z][A-Z0-9]*"}
+}

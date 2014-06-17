@@ -7,6 +7,7 @@ import lovett.tree_new as TN
 from lovett.tree_new import NonTerminal as NT
 from lovett.tree_new import Leaf as L
 
+@unittest.skip("tree_new deprecated")
 class UtilFnsTest(unittest.TestCase):
 
     def test_parse(self):
@@ -21,33 +22,33 @@ class UtilFnsTest(unittest.TestCase):
 class TreeTest(unittest.TestCase):
     def test_label(self):
         t = L("foo", "bar")
-        self.assertEqual(t.label, "foo")
-        t.label = "baz"
-        self.assertEqual(t.label, "baz")
+        self.assertEqual(t.label(), "foo")
+        t.set_label("baz")
+        self.assertEqual(t.label(), "baz")
         def foo(x):
-            x.label = ''
+            x.set_label('')
         self.assertRaises(ValueError, foo, t)
 
     def test_parent_index(self):
         t = NT("foo", [L("bar", "BAR"), L("baz", "BAZ")])
         for i, v in enumerate(t):
-            self.assertEqual(v.parent_index, i)
-            self.assertEqual(t[v.parent_index], v)
-        self.assertIsNone(t.parent_index)
+            self.assertEqual(v.parent_index(), i)
+            self.assertEqual(t[v.parent_index()], v)
+        self.assertIsNone(t.parent_index())
 
     def test_siblings(self):
         l1 = L("bar", "BAR")
         l2 = L("baz", "BAZ")
         t = NT("foo", [l1,l2])
-        self.assertIs(l1.right_sibling, l2)
-        self.assertIs(l2.left_sibling, l1)
-        self.assertIsNone(l1.left_sibling)
-        self.assertIsNone(l2.right_sibling)
+        self.assertIs(l1.right_sibling(), l2)
+        self.assertIs(l2.left_sibling(), l1)
+        self.assertIsNone(l1.left_sibling())
+        self.assertIsNone(l2.right_sibling())
 
     def test_root(self):
         l = L("a", "b")
         t = NT("foo",[NT("bar", [l])])
-        self.assertIs(l.root, t)
+        self.assertIs(l.root(), t)
 
     def test_str_indices(self):
         t = TN.parse("( (IP=1 (FOO bar)))")
@@ -57,12 +58,13 @@ class TreeTest(unittest.TestCase):
         t = TN.parse("( (IP=1 foo))")
         self.assertEqual(str(t), "( (IP=1 foo))")
 
+@unittest.skip("tree_new deprecated")
 class RootTest(unittest.TestCase):
     def test_parse_1(self):
         t = TN.parse("( (METADATA (X 1)) (ID foo) (IP (NP (PRO it)) (VBP works)))")
         self.assertIsInstance(t, TN.Root)
-        self.assertEqual(t.metadata, {'X' : '1'})
-        self.assertEqual(t.id, 'foo')
+        self.assertEqual(t.metadata(), {'X' : '1'})
+        self.assertEqual(t.id(), 'foo')
         self.assertEqual(t[0], NT("IP", [NT("NP", [L("PRO", "it")]), L("VBP", "works")]))
 
     def test_str(self):
@@ -82,7 +84,7 @@ class RootTest(unittest.TestCase):
         t = TN.parse("""( (IP (NP (D I)) (VBP love)
         (NP (NPR Python) (NPR programming)))(ID foo))""")
         # Test that ID is parsed
-        self.assertEqual(t.id, "foo")
+        self.assertEqual(t.id(), "foo")
         # Test that str works
         s = str(t)
         self.assertIsInstance(s, str)
@@ -97,7 +99,7 @@ class RootTest(unittest.TestCase):
         t2 = TN.parse("""( (ID foo)(IP (NP (D I)) (VBP love)
         (NP (NPR Python) (NPR programming))))""")
         # Test that the order of the ID node doesn't matter to parsing
-        self.assertEqual(t2.id, "foo")
+        self.assertEqual(t2.id(), "foo")
         self.assertEqual(t, t2)
         self.assertEqual(hash(t), hash(t2))
         self.assertEqual(s, str(t2))
@@ -107,7 +109,7 @@ class RootTest(unittest.TestCase):
         (NP (NPR Python) (NPR programming)))(METADATA (AOO bar)
         (BOO (A 1) (B 2))))""")
         # Test that ID is parsed
-        self.assertEqual(t.metadata, { 'AOO': 'bar',
+        self.assertEqual(t.metadata(), { 'AOO': 'bar',
                                        'BOO': { 'A': '1',
                                                 'B': '2' } })
         # Test that str works
@@ -127,7 +129,7 @@ class RootTest(unittest.TestCase):
         ) (IP (NP (D I)) (VBP love)
         (NP (NPR Python) (NPR programming))))""")
         # Test that the order of the METADATA node doesn't matter to parsing
-        self.assertEqual(t2.metadata, { 'AOO': 'bar',
+        self.assertEqual(t2.metadata(), { 'AOO': 'bar',
                                         'BOO': { 'A': '1',
                                                  'B': '2' } })
         self.assertEqual(t, t2)
@@ -156,7 +158,7 @@ class RootTest(unittest.TestCase):
 
     def test_parent(self):
         r = TN.Root(None, L("foo", "bar"))
-        self.assertIsNone(r.parent)
+        self.assertIsNone(r.parent())
         t = NT("a", [L("b", "c")])
         self.assertRaises(ValueError, lambda: t.append(r))
 
@@ -174,7 +176,7 @@ class RootTest(unittest.TestCase):
         r[0] = L("baz", "quux")
         self.assertEqual(r, TN.Root(None, L("baz", "quux")))
 
-
+@unittest.skip("tree_new deprecated")
 class LeafTest(unittest.TestCase):
     class MockCorpus(object):
         def __init__(self, version):
@@ -230,4 +232,4 @@ class LeafTest(unittest.TestCase):
     def test_urtext(self):
         # TODO: woefully incomplete
         tree = "( (IP-MAT (X *T*) (X FOO) (X *con*) (XP (X bar) (X BAZ) (. .)) (CODE dddd)))"
-        self.assertEqual(TN.parse(tree).urtext, "FOO bar BAZ.")
+        self.assertEqual(TN.parse(tree).urtext(), "FOO bar BAZ.")

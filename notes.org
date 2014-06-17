@@ -20,3 +20,7 @@ metalua: macros in lua
 rclient: lua <-> r http://scilua.org/rclient.html
 * progress indicator decorator
 https://github.com/noamraph/tqdm
+* type checking
+https://github.com/williame/obiwan
+
+mypy

@@ -39,16 +39,17 @@ def _max_or_none(x, y):
     return max(x, y)
 
 def largest_index(tree):
-    return reduce(_max_or_none, map(index, tree.subtrees))
+    return reduce(_max_or_none, map(index, tree.subtrees()))
 
 def set_index(tree, index):
-    tree.metadata['INDEX'] = index
+    # TODO: do we allow mutating the return value of metadata()?
+    tree.metadata()['INDEX'] = index
 
 def index(tree):
-    return tree.metadata.get('INDEX', None)
+    return tree.metadata().get('INDEX', None)
 
 def index_type(tree):
-    return tree.metadata.get('IDX-TYPE', None)
+    return tree.metadata().get('IDX-TYPE', None)
 
 def index_type_short(tree):
     it = index_type(tree)
@@ -61,11 +62,11 @@ def index_type_short(tree):
 
 def remove_index(tree):
     try:
-        del tree.metadata['INDEX']
+        del tree.metadata()['INDEX']
     except KeyError:
         pass
     try:
-        del tree.metadata['IDX-TYPE']
+        del tree.metadata()['IDX-TYPE']
     except KeyError:
         pass
 
@@ -101,13 +102,13 @@ isLeaf = isLeafNode
 def is_trace(t):
     # TODO: the split below is a kludge; fix it
     return isLeafNode(t) and \
-        t.text.split("-")[0] in ["*T*", "*ICH*", "*CL*", "*"]
+        t.text().split("-")[0] in ["*T*", "*ICH*", "*CL*", "*"]
 
 def is_ec(t):
     # TODO: inexact
     # TODO: how can an empty text happen?!
-    return isLeafNode(t) and (t.text == "0" or t.text == "" or
-                              t.text[0] == "*")
+    return isLeafNode(t) and (t.text() == "0" or t.text() == "" or
+                              t.text()[0] == "*")
 
 def iter_flatten(iterable):
     it = iter(iterable)
@@ -135,8 +136,8 @@ def _parseVersionTree(t):
     """
     if not isinstance(t, lovett.tree_new.Root):
         raise ValueError("pass a Root tree to _parseVersionTree: %r" % t)
-    version = t.tree
-    if version.label != "VERSION":
+    version = t.tree()
+    if version.label() != "VERSION":
         return None
     return _treeToDict(t[0])
 
@@ -149,11 +150,11 @@ def _treeToDict(t):
 
     """
     if isinstance(t, lovett.tree_new.Leaf):
-        return t.text
+        return t.text()
     elif isinstance(t, lovett.tree_new.Root):
         return _treeToDict(t.tree)
     else:
-        return dict([(n.label, _treeToDict(n)) for n in t])
+        return dict([(n.label(), _treeToDict(n)) for n in t])
 
 UNIFY_VERSION_IGNORE_KEYS = ["HASH"]
 

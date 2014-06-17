@@ -12,22 +12,24 @@ import six
 # Lovett libraries
 import lovett.util
 
+# TODO: strip, keep only parsing function generating XML representation
+
 # TODO: add public decorator to control exports
 
 class Tree(collections.abc.Hashable):
-    __slots__ = ["parent", "metadata", "_label"]
+    __slots__ = ["_parent", "_metadata", "_label"]
 
     # TODO: use __getattr__ to pass to metadata dict?
     def __init__(self, label, metadata=None):
-        self.parent = None
+        self._parent = None
         # TODO: we might want to parse metadata
-        self.metadata = metadata or {}
+        self._metadata = metadata or {}
         label, idxtype, idx = lovett.util.label_and_index(label)
         self._label = label
         if idx is not None:
-            self.metadata['INDEX'] = idx
+            self._metadata['INDEX'] = idx
             # TODO: what's the standard name
-            self.metadata['IDX-TYPE'] = idxtype
+            self._metadata['IDX-TYPE'] = idxtype
 
     def __hash__(self):
         return hash(str(self._key_tuple()))
@@ -38,50 +40,50 @@ class Tree(collections.abc.Hashable):
     def _key_tuple(self):
         raise NotImplementedError
 
-    @property
     def label(self):
         return self._label
 
-    @label.setter
-    def label(self, new):
+    def metadata(self):
+        # TODO: freeze before returning?
+        return self._metadata
+
+    def parent(self):
+        return self._parent
+
+    def set_label(self, new):
         new = new.strip()
         if new == '':
             raise ValueError('Nodes cannot have an empty label.')
         self._label = new
 
-    @property
     def parent_index(self):
-        if self.parent is None:
+        if self._parent is None:
             return None
-        for i, child in enumerate(self.parent):
+        for i, child in enumerate(self._parent):
             if child is self:
                 return i
         raise ValueError("Tree not contained in its parent")
 
-    @property
     def left_sibling(self):
-        parent_index = self.parent_index
-        if self.parent and parent_index > 0:
-            return self.parent[parent_index - 1]
+        parent_index = self.parent_index()
+        if self._parent and parent_index > 0:
+            return self._parent[parent_index - 1]
         return None
 
-    @property
     def right_sibling(self):
-        parent_index = self.parent_index
-        if self.parent and parent_index < len(self.parent) - 1:
-            return self.parent[parent_index + 1]
+        parent_index = self.parent_index()
+        if self._parent and parent_index < len(self._parent) - 1:
+            return self._parent[parent_index + 1]
         return None
 
-    @property
     def root(self):
         root = self
-        while root.parent is not None:
-            root = root.parent
+        while root._parent is not None:
+            root = root._parent
         return root
 
-    @property
     def urtext(self):
-        r = " ".join(filter(lambda s: s != "", [l.urtext for l in self]))
+        r = " ".join(filter(lambda s: s != "", [l.urtext() for l in self]))
         r = r.replace("@ @", "")
         # Hacktacularly delete spaces before punctuation
         r = r.replace(" LOVETT_DEL_SP", "")
@@ -90,12 +92,12 @@ class Tree(collections.abc.Hashable):
         return r.strip()
 
 class Leaf(Tree):
-    __slots__ = ["text"]
+    __slots__ = ["_text"]
 
     # TODO: implement dict interface passthrough to metadata?
     def __init__(self, label, text, metadata=None):
         super(Leaf, self).__init__(label, metadata)
-        self.text = text
+        self._text = text
         # TODO: lemma
 
     def __str__(self, indent=0):
@@ -104,7 +106,7 @@ class Leaf(Tree):
             # TODO: we want every child in the tree to be able to get its
             # corpus, not just the root...how to manage? make this a property
             # of Tree which returns self.root.corpus?
-            v = self.root.corpus.metadata['FORMAT']
+            v = self.root().corpus()._metadata['FORMAT']
             # TODO: replace with .get(). hurf durf.
         except:
             v = "old-style"
@@ -112,63 +114,64 @@ class Leaf(Tree):
         if v == "old-style" or v == "dash":
             idxstr = ''
             try:
-                if self.metadata['INDEX'] is not None:
-                    if self.metadata['IDX-TYPE'] == "gap":
+                if self._metadata['INDEX'] is not None:
+                    if self._metadata['IDX-TYPE'] == "gap":
                         idxstr = '='
                     else:
                         idxstr = '-'
-                    idxstr += str(self.metadata['INDEX'])
+                    idxstr += str(self._metadata['INDEX'])
             except:
                 pass
-            text = self.text
+            text = self._text
             if v == "dash":
                 # TODO: need to do this conversion coming in as well
                 # TODO: the code node check below may not be working
                 if not lovett.util.is_code_node(self):
                     text = text.replace("-", "<dash>")
-                lemma = self.metadata.get('LEMMA', None)
+                lemma = self._metadata.get('LEMMA', None)
                 if lemma is not None:
                     text += '-' + lemma
             if lovett.util.is_trace(self):
-                return ''.join(['(', self.label, ' ', text, idxstr, ')'])
+                return ''.join(['(', self._label, ' ', text, idxstr, ')'])
             else:
-                return ''.join(['(', self.label, idxstr, ' ', text, ')'])
+                return ''.join(['(', self._label, idxstr, ' ', text, ')'])
         elif v == "deep":
-            return str(NonTerminal(self.label, [Leaf("ORTHO", self.text)],
-                                   self.metadata))
+            return str(NonTerminal(self._label, [Leaf("ORTHO", self._text)],
+                                   self._metadata))
         else:
             raise ValueError("unknown corpus format: %s" % v)
 
     def __repr__(self):
-        return "Leaf(%s, %s, metadata=%r)" % (self.label, self.text,
-                                              self.metadata)
+        return "Leaf(%s, %s, metadata=%r)" % (self._label, self._text,
+                                              self._metadata)
 
     def _key_tuple(self):
-        return ("leaf", self.label, self.text, self.metadata)
+        return ("leaf", self._label, self._text, self._metadata)
 
-    @property
     def urtext(self):
         # TODO: more excluded node types
-        if lovett.util.isEC(self) or self.label == "CODE" or \
-           self.label.startswith("CODING"):
+        if lovett.util.is_ec(self) or self._label == "CODE" or \
+           self._label.startswith("CODING"):
             return ""
-        if self.label in [",", "."]:
+        if self._label in [",", "."]:
             # Punctuation: no spaces
             # TODO: grossly hacktacular!
-            return "LOVETT_DEL_SP" + self.text
-        return self.text
+            return "LOVETT_DEL_SP" + self._text
+        return self._text
 
-    @property
     def pos(self):
         yield self
 
     def to_xml(self):
-        d = {'label': self.label}
-        d.update(self.metadata)
+        d = {'label': self._label}
+        d.update(self._metadata)
         for key, val in six.iteritems(d):
             d[key] = str(val)
-        r = E.leaf(self.text, **d)
+        r = E.leaf(self._text, **d)
         return r
+
+    def text(self):
+        return self._text
 
 # TODO: move to another file
 class NTCoder(object):
@@ -194,7 +197,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         # coerce to a list; we don't want any generators to sneak in
         self._children = list(children)
         for child in self._children:  # pragma: no branch
-            child.parent = self
+            child._parent = self
 
     ### Abstract methods
 
@@ -216,7 +219,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
     # For MutableSequence
     def __setitem__(self, index, value):
-        value.parent = self
+        value._parent = self
         self._children[index] = value
         # TODO: what should be returned???
         return self._children[index]
@@ -233,18 +236,16 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         del self._children[index]
 
     def insert(self, index, value):
-        value.parent = self
+        value._parent = self
         return self._children.insert(index, value)
 
     def _key_tuple(self):
-        return ("nonterminal", self.label, self._children, self.metadata)
+        return ("nonterminal", self._label, self._children, self._metadata)
 
     ### Properties
-    @property
     def children(self):
         return self.__iter__()
 
-    @property
     def leaves(self):
         for child in self:  # pragma: no branch
             if isinstance(child, NonTerminal):
@@ -252,7 +253,6 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
             else:
                 yield child
 
-    @property
     def height(self):
         max_child_height = 0
         for child in self:  # pragma: no branch
@@ -262,22 +262,19 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                 max_child_height = max(max_child_height, 1)
         return 1 + max_child_height
 
-    @property
     def subtrees(self):
         yield self
         for child in self:  # pragma: no branch
             if hasattr(child, 'subtrees'):
-                yield from child.subtrees
+                yield from child.subtrees()
             else:
                 yield child
 
-    @property
     def pos(self):
-        yield from (x for x in self.subtrees if isinstance(x, Leaf))
+        yield from (x for x in self.subtrees() if isinstance(x, Leaf))
 
-    @property
     def code(self):
-        return NTCoder(self, self.corpus)
+        return NTCoder(self, self._corpus)
 
     ### Methods
 
@@ -292,19 +289,19 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     # TODO: use our utility fns
     def __repr__(self):
         childstr = ", ".join(repr(c) for c in self)
-        return '%s(%s, [%s], metadata=%r)' % (type(self).__name__, self.label,
-                                              childstr, self.metadata)
+        return '%s(%s, [%s], metadata=%r)' % (type(self).__name__, self._label,
+                                              childstr, self._metadata)
 
     def __str__(self, indent=0):
         try:
             # TODO: we want every child in the tree to be able to get its
             # corpus, not just the root...how to manage? make this a property
             # of Tree which returns self.root.corpus?
-            v = self.root.corpus.metadata['FORMAT']
+            v = self.root().corpus()._metadata['FORMAT']
         except:
             v = "old-style"
-        s = "(%s" % self.label
-        m = copy.deepcopy(self.metadata)
+        s = "(%s" % self._label
+        m = copy.deepcopy(self._metadata)
         if v in ['old-style', 'dash']:
             idx = lovett.util.index(self)
             if idx is not None:
@@ -332,8 +329,8 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         return "".join([s, leaves, metadata, ")"])
 
     def to_xml(self):
-        d = {'label': self.label}
-        d.update(self.metadata)
+        d = {'label': self._label}
+        d.update(self._metadata)
         for key, val in six.iteritems(d):
             d[key] = str(val)
         r = E.node(*[child.to_xml() for child in self],
@@ -341,19 +338,19 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         return r
 
 class Root(NonTerminal):
-    __slots__ = ["id"]
+    __slots__ = ["_id"]
 
     def __init__(self, id, tree, metadata=None):
         super(Root, self).__init__('', [tree], metadata)
-        self.id = id
+        self._id = id
 
     def _key_tuple(self):
-        return ("root", self.id, self[0], self.metadata)
+        return ("root", self._id, self[0], self._metadata)
 
     def __str__(self, indent=0):
         s = super(Root, self).__str__(indent)
-        if self.id is not None:
-            s = s[0:len(s) - 1] + "\n  (ID " + self.id + "))"
+        if self._id is not None:
+            s = s[0:len(s) - 1] + "\n  (ID " + self._id + "))"
         return s
 
     def __repr__(self):
@@ -361,21 +358,23 @@ class Root(NonTerminal):
         s = "Root(" + s[7:len(s)]  # get rid of the empty label
         return s
 
-    @property
+    def id(self):
+        return self._id
+
+    def set_id(self, new_id):
+        self._id = new_id
+
     def parent(self):
         return None
 
-    @parent.setter
-    def parent(self, new):
+    def set_parent(self, new):
         if new is not None:
             raise ValueError('Cannot insert a Root into another tree.')
 
-    @property
     def tree(self):
         return self[0]
 
-    @tree.setter
-    def tree(self, val):
+    def set_tree(self, val):
         self[0] = val
 
     def insert(self, x, index):
@@ -396,9 +395,9 @@ class Root(NonTerminal):
 
     def to_xml(self):
         d = {}
-        if self.id:
-            d['ID'] = self.id
-        d.update(self.metadata)
+        if self._id:
+            d['ID'] = self._id
+        d.update(self._metadata)
         for key, val in six.iteritems(d):
             d[key] = str(val)
         return E.sent(self[0].to_xml(), **d)
