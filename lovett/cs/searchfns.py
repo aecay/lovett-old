@@ -389,7 +389,7 @@ def daughters(fn=identity):
             return fn(t)
         else:
             vals = [fn(d) for d in allDaughters(t)]
-            return [v for v in vals if v]
+            return [v for v in vals if v is not None]
     return SearchFunction(_daughters, fn)
 
 @public
