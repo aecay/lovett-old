@@ -5,7 +5,7 @@ import collections.abc
 class AnnotaldXmlError(Exception):
     pass
 
-def isMetaElement(x):
+def _isMetaElement(x):
     return x.tag == "meta"
 
 def _match(one, other):
@@ -161,7 +161,7 @@ class NonTerminal(TreeNode):
                 yield from t.subtrees()
 
     def children(self):
-        yield from (x for x in self.iterchildren() if not isMetaElement(x))
+        yield from (x for x in self.iterchildren() if not _isMetaElement(x))
 
 class Sentence(etree.ElementBase):
     def tree(self):
