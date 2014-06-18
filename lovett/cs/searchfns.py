@@ -1,10 +1,11 @@
-import lovett.tree_new as T
 import re
 import lovett.util as util
 import sys
 import inspect
 import random
 import operator
+
+from ..util import (is_leaf, index, is_trace, iter_flatten, is_text, index_type)
 
 from functools import reduce
 
@@ -272,7 +273,7 @@ def hasText(text):
 
     """
     def _hasText(t):
-        if isinstance(t, T.Leaf):
+        if is_leaf(t):
             if hasattr(text, "match"):
                 if text.match(t.text()):
                     return t
@@ -301,7 +302,7 @@ def hasLemma(lemma):
 
     """
     def _hasLemma(t):
-        if not isinstance(t, T.Leaf):
+        if not is_leaf(t):
             return None
         try:
             the_lemma = t.metadata()['LEMMA']
@@ -648,7 +649,7 @@ def iPrecedes(fn=identity):
 def isLeaf():
     """Tests if a node is a leaf node."""
     def _isLeaf(t):
-        if util.isLeafNode(t):
+        if is_leaf(t):
             return t
         else:
             return None
@@ -707,10 +708,10 @@ def coIndexed(fn=identity):
 
     """
     def _coIndexed(t):
-        the_idx = util.index(t)
+        the_idx = index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
+        c = t.root.subtrees(lambda x: index(x) == the_idx and
                             x != t)
         c = list(c)
         c = filter(fn, c)
@@ -726,10 +727,10 @@ def hasCoIndexed(fn=identity):
 
     """
     def _hasCoIndexed(t):
-        the_idx = util.index(t)
+        the_idx = index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
+        c = t.root.subtrees(lambda x: index(x) == the_idx and
                             x != t)
         c = list(c)
         c = filter(fn, c)
@@ -751,11 +752,10 @@ def antecedent(fn=identity):
     """
     # TODO: test whether the target node is a trace
     def _antecedent(t):
-        the_idx = util.index(t)
+        the_idx = index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
-                            isinstance(x[0], T.Tree))
+        c = t.root.subtrees(lambda x: index(x) == the_idx)
         c = list(c)
         if len(c) == 1:
             if fn(c[0]):
@@ -777,11 +777,10 @@ def hasAntecedent(fn=identity):
 
     """
     def _hasAntecedent(t):
-        the_idx = util.index(t)
+        the_idx = index(t)
         if the_idx == 0:
             return None
-        c = t.root.subtrees(lambda x: util.index(x) == the_idx and
-                            isinstance(x[0], T.Tree))
+        c = t.root.subtrees(lambda x: index(x) == the_idx)
         # Need to convert generator -> list to check length
         c = list(c)
         if len(c) == 1:
@@ -797,7 +796,7 @@ def hasAntecedent(fn=identity):
 def isTrace():
     """Tests whether a node is a trace."""
     def _isTrace(t):
-        if util.isTrace(t):
+        if is_trace(t):
             return t
         else:
             return None
@@ -812,7 +811,7 @@ def isGapped():
 
     """
     def _isGapped(t):
-        if t.metadata.get('IDX-TYPE', None) == "gap":
+        if index_type(t) == "gap":
             return t
         else:
             return None
@@ -822,7 +821,7 @@ def isGapped():
 def isIndexed():
     """Tests whether a node has a numerical index, of any variety."""
     def _isIndexed(t):
-        if 'INDEX' in t.metadata:
+        if index(t) is not None:
             return t
         else:
             return None
@@ -846,7 +845,7 @@ def sharesLabelWith(fn=identity, all=False):
         candidates = fn(t)
         # TODO: If we mandated that searchfns return lists, then there
         # would be no need to do this...
-        for c in util.iter_flatten([candidates]):
+        for c in iter_flatten([candidates]):
             if c.node == the_label:
                 if not all:
                     return t
@@ -884,7 +883,7 @@ def sharesLabelWithMod(fn=identity, all=False, comparator=operator.eq):
             return None
         # TODO: If we mandated that searchfns return lists, then there
         # would be no need to do this...
-        for c in util.iter_flatten([candidates]):
+        for c in iter_flatten([candidates]):
             if comparator(the_label, c.node):
                 if not all:
                     return t
@@ -905,7 +904,7 @@ def domsWords(n):
     def _domsWords(t):
         wds = 0
         for x in t.pos:
-            if util.is_word(x):
+            if is_word(x):
                 wds += 1
         if wds == n:
             return t
@@ -949,7 +948,7 @@ def deep(fn):
             ret = map(fn, ret)
             # TODO: we don't want this forcing, but without it, we get buried
             # too deep in lists
-            return list(x for x in util.iter_flatten(ret) if x is not None)
+            return list(x for x in iter_flatten(ret) if x is not None)
         else:
             return t
     return SearchFunction(_deep, fn)

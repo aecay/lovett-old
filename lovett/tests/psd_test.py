@@ -1,10 +1,10 @@
 import testtools
-import lovett.tree
+import lovett.psd_tree
 import lovett.psd
 from lxml.etree import tostring as S
 from .utils import MatchesXml
 
-PsdTree = lovett.tree.Tree
+PsdTree = lovett.psd_tree.Tree
 
 def P(s):
     return lovett.psd._parse_terminal(PsdTree.parse(s))
