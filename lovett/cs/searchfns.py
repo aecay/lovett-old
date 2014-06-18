@@ -83,7 +83,7 @@ class SearchFunction:
 
     def __invert__(self):
         def _not(t):
-            if self(t):
+            if self(t) is not None:
                 return None
             else:
                 return t
@@ -943,7 +943,7 @@ def deep(fn):
     def _deep(t):
         # TODO: We have null handling here is because we don't go
         # through SearchFunction again.  Should we?
-        if t:
+        if t is not None:
             ret = t.subtrees()
             ret = map(fn, ret)
             # TODO: we don't want this forcing, but without it, we get buried
