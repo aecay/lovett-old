@@ -43,6 +43,7 @@ no legal attributes.  The daughters of the ``corpus`` node are
 ``sentence`` elements.
 
 ::
+
     <corpus>
       sentence-1
       sentence-2
@@ -64,6 +65,7 @@ The sentence has a single daughter, which is a ``nonterminal``, ``text``,
 or ``comment`` tag.
 
 ::
+
     <sentence id="foo">
       <daughter>
         ...
@@ -88,6 +90,7 @@ The tag also has one optional attribute:
     corresponds to the first dash tag (only) in the PSD format.  For
     example, the PPCEME (TODO: link) has (non-exhaustively) the
     following subcategories for NPs:
+
     ``SBJ``
         subject
     ``OB1``
@@ -102,7 +105,7 @@ Categories can fall into one of two classes:
 punctuation
     A punctuation category is one of the chacracters ``.`` or ``,``
     (period and comma)
-nonmunctuation
+nonpunctuation
     A nonpunctuation category must start with an uppercase letter of the
     English alphabet.  Subsequent characters may be uppercase English
     letters or Arabic numerals 0–9.
@@ -115,6 +118,7 @@ and/or any of the terminal types discussed below.
 Here is an example:
 
 ::
+
     <nonterminal category="NP" subcategory="SBJ">
       ...
     </nonterminal>
@@ -135,6 +139,7 @@ attributes.  They must contain exactly one non-whitespace XML text node.
 Here is an example:
 
 ::
+
     <text category="N">
       foo
     </text>
@@ -156,6 +161,7 @@ They come in several varieties:
     traces of clitics
 
 Trace nodes have the following mandatory attribute:
+
 ``tracetype``
     The kind of trace: “T”, “ICH”, or “CL” (or another type).  Trace
     types must consist only of one or more uppercase English letters
@@ -168,10 +174,11 @@ Empty category
 """"""""""""""
 
 An ``ec`` node represents an empty category – that is, a syntactic hole
-not related to a movement operation.  Just as with ``trace`` and
-``text``, ``ec`` nodes have ``category`` and ``subcategory``
-attributes.  There are several varieties of empty categories in the
-Penn-style parsed historical corpora:
+not related to a movement operation.  Just as with ``trace`` and ``text``,
+``ec`` nodes have ``category`` and ``subcategory`` attributes.  There are
+several varieties of empty categories in the Penn-style parsed historical
+corpora:
+
 ``0``
     Phonologically null elements of various syntactic categories, such
     as the complementizer in the sentence “John said ___ he was sick last
@@ -186,6 +193,7 @@ Penn-style parsed historical corpora:
     An empty arbitrary subject
 
 An empty category node has the following mandatory attribute:
+
 ``ectype``
     The kind of empty category.  Can be “zero” for a ``0``, “star” for a
     ``*``, or any other string of lowercase English letters.
@@ -211,6 +219,7 @@ the text is surrounded by braces, and the comment type precedes the
 actual text:
 
 ::
+
     (CODE {TODO:revise_this_sentence})
 
 However, in some released corpora this convention is not followed, such
@@ -218,6 +227,7 @@ as for example the PPCEME.  Instead, bare comments are used (for
 example, to encode formatting tags present in the source text):
 
 ::
+
     (CODE <font>)
 
 PSDX ``comment`` elements have a mandatory attribute, which is the only
@@ -235,3 +245,5 @@ other.)
 
 Metadata
 ^^^^^^^^
+
+foo

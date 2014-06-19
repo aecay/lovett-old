@@ -32,6 +32,7 @@ import os
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
 ]
@@ -262,3 +263,11 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+
+### Autodoc
+
+# TODO: includes irrelevant extras
+# autodoc_default_flags = ["special-members"]
+
+intersphinx_mapping = {'python': ('http://docs.python.org/3.4', None)}
