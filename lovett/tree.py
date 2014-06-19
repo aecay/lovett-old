@@ -9,6 +9,12 @@ def _isMetaElement(x):
     return x.tag == "meta"
 
 def _match(one, other):
+    """Compare two ``lxml.etree._Element`` instances for equality.
+
+    Checks, in turn, the tag, attributes, text (and tail), and children
+    recursively.
+
+    """
     if one.tag != other.tag:
         return False
     for name, value in one.attrib.items():
@@ -32,7 +38,26 @@ def _match(one, other):
     return True
 
 class TreeNode(etree.ElementBase):
+    """Base class for all classes which represent elements in a PSDX tree.
+
+    This class inherits from the `LXML ElementBase class
+    <http://lxml.de/api/lxml.etree.ElementBase-class.html>`_.
+
+    It implements equality based on comparing the XML tag, attributes, text,
+    and children.  It throws an error on being accessed as an iterator, since
+    this will return the metadata node mixed with bona fide children.  In
+    order to iterate over children, use :func:`NonTerminal.children`.
+
+    """
     def label(self):
+        """Return the label for the node, composed from the ``category`` and
+        ``subcategory`` attributes.
+
+        :returns: The label of the node
+        :rtype: str
+
+        """
+
         cat = self.get("category")
         subcat = self.get("subcategory", None)
         if subcat is not None:
@@ -40,14 +65,24 @@ class TreeNode(etree.ElementBase):
         else:
             return cat
 
-    def set_label(self, newLabel):
-        p = newLabel.split("-")
+    def set_label(self, new_label):
+        """Set the label of a node.
+
+        The passed ``new_label`` can have at most two pieces separated by a
+        dash.  The first will be assigned to the ``category`` attribute, and
+        the second, if it exists, to the ``subcategory``.
+
+        :param str new_label: the new label to set
+
+        """
+
+        p = new_label.split("-")
         self.attrib["category"] = p[0]
         if len(p) == 2:
             self.attrib["subcategory"] = p[1]
-        if len(p) > 2:
+        elif len(p) > 2:
             raise AnnotaldXmlError("cannot set multiple dash tags in XML: " +
-                                   newLabel)
+                                   new_label)
 
     def urtext(self):
         # TODO:
@@ -60,6 +95,12 @@ class TreeNode(etree.ElementBase):
         return etree.tostring(self, method="text")
 
     def sentence_node(self):
+        """Return the ``sentence`` node dominating a node.
+
+        :rtype: :class:`Sentence`
+
+        """
+
         p = self
         while True:
             p = p.getparent()
@@ -69,12 +110,29 @@ class TreeNode(etree.ElementBase):
                 return t
 
     def left_sibling(self):
+        """Return the next sibling to the left of a node.
+
+        :rtype: :class:`TreeNode`
+
+        """
+
         return self.getprevious()
 
     def right_sibling(self):
+        """Return the next sibling to the right of a node.
+
+        :rtype: :class:`TreeNode`
+
+        """
         return self.getnext()
 
     def metadata(self):
+        """Return a dict-like object backed by a node's metadata.
+
+        :rtype: :class:`MetadataDict`
+
+        """
+
         meta = self.find("meta")
         if meta is None:
             meta = self.makeelement("meta")
@@ -106,13 +164,29 @@ class TreeNode(etree.ElementBase):
         print(etree.tostring(other))
         return _match(self, other)
 
-    # Not pictured: parent_index, __eq__, __hash__
+    # Not pictured: parent_index, __hash__
 
 class MetadataDict(collections.abc.MutableMapping):
-    # TODO: make a forbidden metadata items property on the class; if we try
-    # to set a forbidden metadata item throw an error.  Forbidden metadata
-    # will be things like category, tracetype (for traces) etc. which should
-    # be set as attrs and not metadata
+    """A dict-like object backed by PSDX metadata.
+
+    This class provides a dict-like intreface to python code which is backed
+    by the ``<meta>`` tag of a PSDX node.  You should be careful about hanging
+    on to references to these objects, since doing so may adversely affect
+    memory usage by preventing lxml's Python proxy objects from being garbage
+    collected.  (This supposition is not tested, though.)
+
+    This class forbids accessing the following metadata keys, which should
+    instead be assigned to attributes:  (TODO: link to PSDX doc)
+
+    - ``category``
+    - ``comtype``
+    - ``ectype``
+    - ``id``
+    - ``subcategory``
+    - ``tracetype``
+
+    """
+
     def __init__(self, element):
         self.element = element
 
@@ -150,9 +224,18 @@ class MetadataDict(collections.abc.MutableMapping):
         yield from (x.tag for x in self.element)
 
 class NonTerminal(TreeNode):
+    """A class representing nonterminal PSDX nodes."""
     # not pictured: children, leaves, height, subtrees, pos, map_leaves,
     # filter_leaves, to_xml, __str__
     def subtrees(self):
+        """Access the subtrees of a nonterminal.
+
+        Returns all subtrees in a node, including terminals, in `preorder
+        <https://en.wikipedia.org/wiki/Tree_traversal#Pre-order>`_.
+
+        :rtype: iterator
+
+        """
         for t in self.children():
             if isinstance(t, Terminal):
                 yield t
@@ -161,36 +244,124 @@ class NonTerminal(TreeNode):
                 yield from t.subtrees()
 
     def children(self):
+        """Access the children of a nonterminal.
+
+        :rtype: Iterator
+
+        """
+
         yield from (x for x in self.iterchildren() if not _isMetaElement(x))
 
 class Sentence(etree.ElementBase):
+    """A class representing a sentence PSDX node."""
     def tree(self):
+        """Get the tree that corresponds to the sentence.
+
+        :rtype: :class:`TreeNode`
+
+        """
+
         # TODO: falls over on metadata
         return self[0]
 
     def id(self):
+        """Get the ID of a sentence.
+
+        :rtype: str
+
+        """
+
         return self.get("id", None)
 
     def set_id(self, newid):
+        """Set the ID of a sentence.
+
+        :param str newid:
+
+        """
+
         self.set("id", new_id)
 
 class Terminal(TreeNode):
+    """A class representing a terminal node."""
     pass
 
 class Text(Terminal):
+    """A class representing a text node."""
     pass
 
 class Trace(Terminal):
+    """A class representing a trace node."""
     # TODO: implement validation in _init method, e.g. must have index.  Else
     # assign unused index from the root tree.  Make it so reparenting an index
     # will reassign a unique value.
 
-    # TODO: need another tracetype: zero, amovt, and etc.
-    pass
+    def tracetype(self):
+        """Get the type of a trace.
+
+        :rtype: str
+
+        """
+        return self.get("tracetype", None)
+
+    def set_tracetype(self, newtype):
+        """Set the type of a trace.
+
+        :param str newtype:
+
+        """
+        self.set("tracetype", newtype)
 
 class Ec(Terminal):
-    pass
+    """A class representing an empty category node."""
+
+    def ectype(self):
+        """Get the type of an empty category.
+
+        :rtype: str
+
+        """
+        return self.get("ectype", None)
+
+    def set_ectype(self, newtype):
+        """Set the type of an empty category.
+
+        :param str newtype:
+
+        """
+        self.set("ectype", newtype)
 
 class Comment(Terminal):
-    # TODO: use XML comments??
-    pass
+    """A class representing a comment node."""
+
+    def label(self):
+        """Get the label of a comment node.
+
+        Always returns ``"CODE"``.
+
+        """
+        return "CODE"
+
+    def set_label(self, newlabel):
+        """Set the label of a comment node.
+
+        Always raises an exception.
+
+        """
+        raise AnnotaldXmlException("cannot set the label of a comment node")
+
+    def comtype(self):
+        """Get the type of a comment.
+
+        :rtype: str
+
+        """
+        return self.get("comtype", None)
+
+    def set_comtype(self, newtype):
+        """Set the type of a comment.
+
+        :param str newtype:
+
+        """
+        self.set("comtype", newtype)
