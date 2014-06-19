@@ -12,7 +12,7 @@ class AbstractCodingQuery(metaclass=abc.ABCMeta):
         self.description = desc
 
 
-    @abstractmethod
+    @abc.abstractmethod
     def code_tree(self, tree):
         pass
 
