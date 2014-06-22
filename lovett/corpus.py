@@ -6,9 +6,12 @@ from .tree import (Sentence, NonTerminal, Text, Trace, Ec, Comment)
 # TODO: __all__ etc.
 
 class Corpus(etree.ElementBase):
+    """Class representing a corpus."""
     def trees(self):
-        # TODO: filter out meta crap
+        """Get iterator over trees in this corpus."""
+        # TODO: filter out meta nodes
         return iter(self)
+    # TODO: join two corpora together, map and filter corpus
 
 _lookup = etree.ElementNamespaceClassLookup()
 _ns = _lookup.get_namespace(None)
@@ -27,18 +30,22 @@ for p in (("corpus", Corpus),
 parser = etree.XMLParser(remove_blank_text=True)
 parser.set_element_class_lookup(_lookup)
 
+# TODO: impose restriction that root is a corpus?
+# TODO: impose validation
 def parse_string(s):
+    """Parse PSDX from a string."""
     r = etree.fromstring(s, parser=parser)
     return _postprocess_parsed(r)
 
 def parse_file(file):
+    """Parse PSDX from a file."""
     r = etree.parse(file, parser=parser)
     return _postprocess_parsed(r)
 
 def _postprocess_parsed(r):
     for x in r.iter():
         x.tag = x.tag.lower()
-    return r
+    return r.getroot()
 
 _psdx_rng = None
 def _validate_psdx(corpus):

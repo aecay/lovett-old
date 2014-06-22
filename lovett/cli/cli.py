@@ -31,18 +31,26 @@ def validate(filename):
         sys.exit(1)
 
 @cli.command()
-@click.argument("infile", type=click.Path(exists=True))
-@click.argument("outfile", nargs=-1, type=click.Path())
+@click.argument("infile", nargs=1, type=click.File("r"))
+@click.argument("outfile", nargs=1, type=click.File("w"))
 def format(infile, outfile):
-    if len(outfile) > 1:
-        raise Exception("Please specify one input and one output file.")
-    elif len(outfile) == 1:
-        outfile = outfile[0]
-    else:
-        outfile = None
     s = etree.tostring(etree.parse(infile), pretty_print=True, encoding="utf-8")
-    if outfile is not None:
-        with open(outfile, "wb") as f:
-            f.write(s)
+    outfile.write(s.decode("utf-8"))
+
+# TODO: factor out common file handling code
+@cli.command()
+# "from" clashes with a python keyword, so assign a different name
+@click.option("--from", "-f", "frm", type=click.Choice(["psdx", "deep"]))
+@click.option("--to", "-t", type=click.Choice(["psdx", "deep"]))
+@click.argument("infile", nargs=1, type=click.File("r"))
+@click.argument("outfile", nargs=1, type=click.File("w"))
+def convert(frm, to, infile, outfile):
+    if frm == "psdx":
+        corpus = parse_file(infile)
+        logging.info("%s" % type(corpus))
     else:
-        sys.stdout.write(s.decode("utf-8"))
+        raise NotImplemented("convert from: %s" % frm)
+    if to == "deep":
+        outfile.write("\n\n".join(map(lambda x: x.to_deep(), corpus.trees())))
+    else:
+        raise NotImplemented("convert to: %s" % to)
