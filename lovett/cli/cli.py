@@ -47,7 +47,6 @@ def format(infile, outfile):
 def convert(frm, to, infile, outfile):
     if frm == "psdx":
         corpus = parse_file(infile)
-        logging.info("%s" % type(corpus))
     else:
         raise NotImplemented("convert from: %s" % frm)
     if to == "deep":

@@ -172,8 +172,6 @@ class TreeNode(etree.ElementBase):
             other._strip_empty_meta()
         except AttributeError:
             pass
-        print(etree.tostring(self))
-        print(etree.tostring(other))
         return _match(self, other)
 
     def to_deep(self, offset):
@@ -317,12 +315,38 @@ class Terminal(TreeNode):
 class Text(Terminal):
     """A class representing a text node."""
     def to_deep(self, offset=0):
+        # Calculate whether the linearly preceding node has_continuation...
+        def acceptable(x):
+            return x is not None and x is not self and x.tag in ["text", "trace", "ec"]
+        pre_dollar = False
+        p = self
+        while not acceptable(p):
+            if p is None:
+                break
+            if p.tag == "nonterminal":
+                # drop down a level
+                p = p[len(p)-1]
+                continue
+            if p.getprevious() is None:
+                if p.getparent().tag == "sentence":
+                    break
+                p = p.getparent().getprevious()
+            else:
+                p = p.getprevious()
+        if p is not None and p.metadata().get("has_continuation", None) == "yes":
+            pre_dollar = True
+        # ...back to our regularly scheduled programming
         m = self.find("meta")
         ms = ""
         l = self.label()
         if m is not None:
             ms = "\n" + _meta_to_deep(m, offset + len(l) + 2)
-        return "%s(%s (ORTHO %s)%s)" % (" " * offset, l, self.urtext(), ms)
+        return "%s(%s (ORTHO %s%s%s)%s)" % \
+            (" " * offset, l,
+             "$" if pre_dollar else "",
+             self.urtext(),
+             "$" if self.metadata().get("has_continuation", None) == "yes" else "",
+             ms)
 
     # TODO: warn on access to text, suggest urtext instead
     def urtext(self):
@@ -333,8 +357,6 @@ class Text(Terminal):
             return m.tail
         else:
             return self.text
-
-
 
 class Trace(Terminal):
     """A class representing a trace node."""
