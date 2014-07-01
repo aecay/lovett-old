@@ -13,6 +13,9 @@ class Corpus(etree.ElementBase):
         return iter(self)
     # TODO: join two corpora together, map and filter corpus
 
+    def to_deep(self):
+        return "\n\n".join(map(lambda s: s.to_deep(), self.trees()))
+
 _lookup = etree.ElementNamespaceClassLookup()
 _ns = _lookup.get_namespace(None)
 # Annoyance: xml generated from a browser is typically case-insensitive,
@@ -32,6 +35,7 @@ parser.set_element_class_lookup(_lookup)
 
 # TODO: impose restriction that root is a corpus?
 # TODO: impose validation
+# TODO: do we return a document or its first tag?
 def parse_string(s):
     """Parse PSDX from a string."""
     r = etree.fromstring(s, parser=parser)
@@ -45,7 +49,7 @@ def parse_file(file):
 def _postprocess_parsed(r):
     for x in r.iter():
         x.tag = x.tag.lower()
-    return r.getroot()
+    return r
 
 _psdx_rng = None
 def _validate_psdx(corpus):
