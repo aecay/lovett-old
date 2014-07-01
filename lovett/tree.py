@@ -39,6 +39,8 @@ def _match(one, other):
 
 def _meta_to_deep(m, offset):
     if len(m) == 0:
+        if m.tag == "meta":
+            return ""
         return "%s(%s %s)" % (" " * offset, m.tag, m.text)
     else:
         l = m.tag
@@ -47,6 +49,16 @@ def _meta_to_deep(m, offset):
         c = list(map(lambda x: _meta_to_deep(x, offset + len(l) + 2), m))
         c[0] = c[0].lstrip()
         return " " * offset + ("(%s " % l) + "\n".join(c) + ")"
+
+def _calc_trace(node):
+    m = node.metadata()
+    i = m.get("index", None)
+    it = m.get("idxtype", None)
+    if i is not None and it is not None:
+        del m["index"]
+        del m["idxtype"]
+        return ("=" if it == "gap" else "-") + i
+    return ""
 
 
 class TreeNode(etree.ElementBase):
@@ -95,16 +107,6 @@ class TreeNode(etree.ElementBase):
         elif len(p) > 2:
             raise AnnotaldXmlError("cannot set multiple dash tags in XML: " +
                                    new_label)
-
-    def urtext(self):
-        # TODO:
-        # - join continued words
-        # - remove spaces before punctuation
-        # look at using etree.XPath("//text()") to get a list of in-order text
-        # chunks...
-        # or: traverse the tree in order, push text (and appropriate spaces)
-        # onto a list, concat and return
-        return etree.tostring(self, method="text")
 
     def sentence_node(self):
         """Return the ``sentence`` node dominating a node.
@@ -228,7 +230,9 @@ class MetadataDict(collections.abc.MutableMapping):
             r.text = val
 
     def __delitem__(self, item):
-        raise NotImplementedError()
+        r = self.element.find(item.lower())
+        if r is not None:
+            r.getparent().remove(r)
 
     def __len__(self):
         return len(self.element)
@@ -274,6 +278,11 @@ class NonTerminal(TreeNode):
             c.append(_meta_to_deep(m, offset + len(l) + 2))
         return " " * offset + ("(%s " % l) + "\n".join(c) + ")"
 
+    def urtext(self):
+        # TODO: join split words
+        return " ".join(filter(lambda x: x != "",
+                               (s.urtext() for s in self if s.tag != "meta")))
+
 
 class Sentence(etree.ElementBase):
     """A class representing a sentence PSDX node."""
@@ -296,7 +305,7 @@ class Sentence(etree.ElementBase):
 
         return self.get("id", None)
 
-    def set_id(self, newid):
+    def set_id(self, new_id):
         """Set the ID of a sentence.
 
         :param str newid:
@@ -310,7 +319,8 @@ class Sentence(etree.ElementBase):
 
 class Terminal(TreeNode):
     """A class representing a terminal node."""
-    pass
+    def urtext(self):
+        return ""
 
 class Text(Terminal):
     """A class representing a text node."""
@@ -328,7 +338,7 @@ class Text(Terminal):
                 p = p[len(p)-1]
                 continue
             if p.getprevious() is None:
-                if p.getparent().tag == "sentence":
+                if p.getparent() is None or p.getparent().tag == "sentence":
                     break
                 p = p.getparent().getprevious()
             else:
@@ -339,24 +349,22 @@ class Text(Terminal):
         m = self.find("meta")
         ms = ""
         l = self.label()
+        ts = _calc_trace(self)
         if m is not None:
-            ms = "\n" + _meta_to_deep(m, offset + len(l) + 2)
-        return "%s(%s (ORTHO %s%s%s)%s)" % \
-            (" " * offset, l,
+            ms = _meta_to_deep(m, offset + len(l) + 2)
+            if ms != "":
+                ms = "\n" + ms
+        return "%s(%s%s (ORTHO %s%s%s)%s)" % \
+            (" " * offset,
+             l,
+             ts,
              "$" if pre_dollar else "",
-             self.urtext(),
+             self.text,
              "$" if self.metadata().get("has_continuation", None) == "yes" else "",
              ms)
 
-    # TODO: warn on access to text, suggest urtext instead
     def urtext(self):
-        m = self.find("meta")
-        if m is not None:
-            if self.text:
-                raise AnnotaldXmlError("text before meta")
-            return m.tail
-        else:
-            return self.text
+        return self.text
 
 class Trace(Terminal):
     """A class representing a trace node."""
@@ -384,14 +392,18 @@ class Trace(Terminal):
         m = self.find("meta")
         ms = ""
         l = self.label()
+        ts = _calc_trace(self)
         if m is not None:
-            ms = "\n" + _meta_to_deep(m, offset + len(l) + 2)
+            ms = _meta_to_deep(m, offset + len(l) + 2)
+            if ms != "":
+                ms = "\n" + ms
         else:
             raise AnnotaldXmlError("traces must have metadata")
-        return "%s(%s (ALT-ORTHO %s)%s)" % (" " * offset,
-                                            l,
-                                            "*" + self.tracetype() + "*",
-                                            ms)
+        return "%s(%s (ALT-ORTHO %s%s)%s)" % (" " * offset,
+                                              l,
+                                              "*" + self.tracetype() + "*",
+                                              ts,
+                                              ms)
 
 class Ec(Terminal):
     """A class representing an empty category node."""
@@ -417,12 +429,18 @@ class Ec(Terminal):
         m = self.find("meta")
         ms = ""
         l = self.label()
+        ts = _calc_trace(self)
         if m is not None:
-            ms = "\n" + _meta_to_deep(m, offset + len(l) + 2)
-        return "%s(%s (ALT-ORTHO %s)%s)" % (" " * offset,
-                                            l,
-                                            "*" + self.ectype() + "*",
-                                            ms)
+            ms = _meta_to_deep(m, offset + len(l) + 2)
+            if ms != "":
+                ms = "\n" + ms
+        if self.ectype() == "zero":
+            ect = "0"
+        elif self.ectype() == "star":
+            ect = "*"
+        else:
+            ect = "*" + self.ectype() + "*"
+        return "%s(%s%s (ALT-ORTHO %s)%s)" % (" " * offset, l, ts, ect, ms)
 
 class Comment(Terminal):
     """A class representing a comment node."""
@@ -460,8 +478,8 @@ class Comment(Terminal):
         self.set("comtype", newtype)
 
     def to_deep(self, offset=0):
-        return " " * offset + "(CODE (ALT-ORTHO {%s:%s}))" % (self.comtype(),
-                                                              self.text.replace(" ", "_"))
+        return " " * offset + "(CODE (ALT-ORTHO {%s:%s}))" % \
+            (self.comtype(), self.text.replace(" ", "_"))
 
     def metadata(self):
         raise AnnotaldXmlError("Comments don't have metadata")

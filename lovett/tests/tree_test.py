@@ -4,6 +4,7 @@ import lxml.etree
 from lovett.corpus import parse_string
 from .utils import MatchesXml
 from lovett.tree import AnnotaldXmlError
+import lovett.tree
 
 class TreeTest(testtools.TestCase):
     def test_eq(self):
@@ -30,6 +31,11 @@ class TreeTest(testtools.TestCase):
         one = parse_string("<text category=\",\"><meta/>,</text>")
         two = parse_string("<text category=\",\">,</text>")
         self.assertEqual(one, two)
+
+    def test_meta_to_deep(self):
+        m = lxml.etree.fromstring("<meta><x>y</x></meta>")
+        self.assertEqual(lovett.tree._meta_to_deep(m, 0),
+                         "(META (x y))")
 
 class TreeNodeTest(testtools.TestCase):
     # TreeNode
@@ -91,7 +97,7 @@ class NonTerminalTest(testtools.TestCase):
             """<nonterminal category=\"XYZ\">
             <text category=\"FOO\">BAR</text>
             <text category=\"FOO\" subcategory=\"BAZ\">BAR</text>
-            <text category=\"FOO\"><meta><x>y</x></meta>BAR</text>
+            <text category=\"FOO\">BAR<meta><x>y</x></meta></text>
             <trace category=\"FOO\" tracetype=\"T\"><meta><index>1</index><idxtype>regular</idxtype></meta></trace>
             <ec category=\"FOO\" ectype=\"pro\" />
             <comment comtype=\"FOO\">bar</comment>
@@ -103,9 +109,7 @@ class NonTerminalTest(testtools.TestCase):
      (FOO-BAZ (ORTHO BAR))
      (FOO (ORTHO BAR)
           (META (x y)))
-     (FOO (ALT-ORTHO *T*)
-          (META (index 1)
-                (idxtype regular)))
+     (FOO (ALT-ORTHO *T*-1))
      (FOO (ALT-ORTHO *pro*))
      (CODE (ALT-ORTHO {FOO:bar})))
                          """.strip())
@@ -211,11 +215,25 @@ class TerminalTest(testtools.TestCase):
         self.assertEqual(s.to_deep(),
                          "(FOO-BAZ (ORTHO BAR))")
     def test_to_deep_meta(self):
-        s = parse_string("<text category=\"FOO\"><meta><x>y</x></meta>BAR</text>")
+        s = parse_string("<text category=\"FOO\">BAR<meta><x>y</x></meta></text>")
         self.assertEqual(s.to_deep(),
                          """
 (FOO (ORTHO BAR)
      (META (x y)))
+                         """.strip())
+
+    def test_to_deep_index(self):
+        s = parse_string("<text category=\"FOO\">BAR<meta><index>1</index><idxtype>regular</idxtype></meta></text>")
+        self.assertEqual(s.to_deep(),
+                         """
+(FOO-1 (ORTHO BAR))
+                         """.strip())
+
+    def test_to_deep_index_gap(self):
+        s = parse_string("<text category=\"FOO\">BAR<meta><index>1</index><idxtype>gap</idxtype></meta></text>")
+        self.assertEqual(s.to_deep(),
+                         """
+(FOO=1 (ORTHO BAR))
                          """.strip())
 
     def test_urtext(self):
@@ -223,7 +241,7 @@ class TerminalTest(testtools.TestCase):
         self.assertEqual(s.urtext(), "BAR")
 
     def test_urtext_meta(self):
-        s = parse_string("<text category=\"FOO\"><meta><x>y</x></meta>BAR</text>")
+        s = parse_string("<text category=\"FOO\">BAR<meta><x>y</x></meta></text>")
         self.assertEqual(s.urtext(), "BAR")
 
 class TraceTest(testtools.TestCase):
@@ -231,9 +249,13 @@ class TraceTest(testtools.TestCase):
         s = parse_string("<trace category=\"FOO\" tracetype=\"T\"><meta><index>1</index><idxtype>regular</idxtype></meta></trace>")
         self.assertEqual(s.to_deep(),
                          """
-(FOO (ALT-ORTHO *T*)
-     (META (index 1)
-           (idxtype regular)))
+(FOO (ALT-ORTHO *T*-1))
+                         """.strip())
+    def test_to_deep_gap(self):
+        s = parse_string("<trace category=\"FOO\" tracetype=\"T\"><meta><index>1</index><idxtype>gap</idxtype></meta></trace>")
+        self.assertEqual(s.to_deep(),
+                         """
+(FOO (ALT-ORTHO *T*=1))
                          """.strip())
 
 class EcTest(testtools.TestCase):
@@ -241,6 +263,30 @@ class EcTest(testtools.TestCase):
         s = parse_string("<ec category=\"FOO\" ectype=\"pro\" />")
         self.assertEqual(s.to_deep(),
                          """(FOO (ALT-ORTHO *pro*))""".strip())
+
+    def test_to_deep_zero(self):
+        s = parse_string("<ec category=\"FOO\" ectype=\"zero\" />")
+        self.assertEqual(s.to_deep(),
+                         """(FOO (ALT-ORTHO 0))""".strip())
+
+    def test_to_deep_star(self):
+        s = parse_string("<ec category=\"FOO\" ectype=\"star\" />")
+        self.assertEqual(s.to_deep(),
+                         """(FOO (ALT-ORTHO *))""".strip())
+
+    def test_to_deep_index(self):
+        s = parse_string("<ec category=\"FOO\" ectype=\"pro\"><meta><index>1</index><idxtype>regular</idxtype></meta></ec>")
+        self.assertEqual(s.to_deep(),
+                         """
+(FOO-1 (ALT-ORTHO *pro*))
+                         """.strip())
+
+    def test_to_deep_index_gap(self):
+        s = parse_string("<ec category=\"FOO\" ectype=\"pro\"><meta><index>1</index><idxtype>gap</idxtype></meta></ec>")
+        self.assertEqual(s.to_deep(),
+                         """
+(FOO=1 (ALT-ORTHO *pro*))
+                         """.strip())
 
 class CommentTest(testtools.TestCase):
     def test_to_deep(self):
