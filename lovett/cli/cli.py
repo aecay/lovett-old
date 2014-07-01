@@ -50,6 +50,6 @@ def convert(frm, to, infile, outfile):
     else:
         raise NotImplemented("convert from: %s" % frm)
     if to == "deep":
-        outfile.write("\n\n".join(map(lambda x: x.to_deep(), corpus.trees())))
+        outfile.write("\n\n".join(map(lambda x: x.to_deep(), corpus.getroot().trees())))
     else:
         raise NotImplemented("convert to: %s" % to)
